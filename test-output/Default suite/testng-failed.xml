@@ -3,17 +3,13 @@
 <suite name="Failed suite [Default suite]" guice-stage="DEVELOPMENT">
   <test thread-count="5" name="Default test(failed)">
     <classes>
-      <class name="testCases.TruTime">
+      <class name="testCases.BeCognizant">
         <methods>
-          <include name="validateCurrentHighlightedDate"/>
-          <include name="printLegends"/>
-          <include name="validateTruTimeDates"/>
+          <include name="getInfo"/>
           <include name="setup"/>
-          <include name="validateCurrentMonthAndYear"/>
-          <include name="validateBackDatedTopUp"/>
           <include name="tearDown"/>
         </methods>
-      </class> <!-- testCases.TruTime -->
+      </class> <!-- testCases.BeCognizant -->
     </classes>
   </test> <!-- Default test(failed) -->
 </suite> <!-- Failed suite [Default suite] -->

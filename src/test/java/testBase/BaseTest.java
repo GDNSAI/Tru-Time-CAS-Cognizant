@@ -44,7 +44,7 @@ public class BaseTest {
 	
 	@AfterTest
 	public void tearDown() {
-		//driver.quit();
+		driver.quit();
 	}
 
 	public String captureScreen(String tname) {
