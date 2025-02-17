@@ -1,137 +1,9 @@
-const express = require('express');
-const ExcelJS = require('exceljs');
-const cors = require('cors');
-const http = require('http');
-const socketIo = require('socket.io');
-const fs = require('fs').promises;
-const mutex = require('async-mutex').Mutex;
-const path = require('path');
-
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-const port = process.env.PORT || 3000;
-const excelFilePath = 'C:/Users/2308397/PilotProject-Ally/PilotProject-Ally.xlsx';
-const writeMutex = new mutex();
-
-// Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
-app.use(cors());
-
-// Enhanced Excel initialization
-async function initializeExcel() {
-  try {
-    await fs.access(excelFilePath);
-  } catch (error) {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Attendance');
-    worksheet.columns = [
-      { header: 'Timestamp', key: 'timestamp' },
-      { header: 'Associate ID', key: 'associateId' },
-      { header: 'Associate Name', key: 'associateName' },
-      { header: 'Status', key: 'status' },
-      { header: 'Project ID', key: 'projectId' },
-      { header: 'Project Name', key: 'projectName' },
-      { header: 'Allocation Start Date', key: 'allocationStartDate' },
-      { header: 'Onshore/Offshore', key: 'onshoreOffshore' },
-      { header: 'Location', key: 'location' },
-      { header: 'Leave Date', key: 'leaveDate' },
-      { header: 'Leave Type', key: 'leaveType' }
-    ];
-    await workbook.xlsx.writeFile(excelFilePath);
-  }
-}
-
-// Validation middleware
-function validateSubmission(req, res, next) {
-  const requiredFields = [
-    'associateId', 'associateName', 'status', 'projectId',
-    'projectName', 'allocationStartDate', 'onshoreOffshore',
-    'location', 'leaveDates', 'leaveType'
-  ];
-
-  if (!req.body || requiredFields.some(field => !req.body[field])) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  if (!Array.isArray(req.body.leaveDates)) {
-    return res.status(400).json({ error: 'leaveDates must be an array' });
-  }
-
-  next();
-}
-
-app.post('/submit', validateSubmission, async (req, res) => {
-  console.log('Received submission:', req.body);
-  const release = await writeMutex.acquire();
-  try {
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(excelFilePath);
-    const worksheet = workbook.getWorksheet('Attendance');
-
-    if (!worksheet) {
-      throw new Error('Worksheet "Attendance" not found');
-    }
-
-    const timestamp = new Date().toISOString();
-    req.body.leaveDates.forEach(leaveDate => {
-      console.log('Adding row:', {
-        timestamp,
-        ...req.body,
-        leaveDate: leaveDate
-      });
-      worksheet.addRow({
-        timestamp,
-        ...req.body,
-        leaveDate: leaveDate
-      });
-    });
-
-    await workbook.xlsx.writeFile(excelFilePath);
-    io.emit('dataUpdated', {
-      ...req.body,
-      timestamp
-    });
-    res.status(200).json({ message: 'Data stored successfully' });
-  } catch (error) {
-    console.error('Database Error:', error); // Log the error
-    res.status(503).json({
-      error: 'Service temporarily unavailable',
-      retryAfter: 30
-    });
-  } finally {
-    release();
-  }
-});
-
-// Add error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Server Error:', err);
-  res.status(500).json({
-    error: 'Internal server error',
-    requestId: req.headers['x-request-id']
-  });
-});
-
-initializeExcel().then(() => {
-  server.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
-});
-
-
-<!DOCTYPE html>
+s<!DOCTYPE html>
 <html>
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
+        /* Your existing CSS */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             margin: 0;
@@ -336,18 +208,18 @@ initializeExcel().then(() => {
     <div class="form-container">
         <div class="form-group">
             <label for="associateId">Associate ID:</label>
-            <input type="text" id="associateId" placeholder="Enter Associate ID" required>
+            <input type="text" id="associateId" name="associateId" placeholder="Enter Associate ID" required>
             <div class="error-message" id="associateIdError"></div>
         </div>
         <div class="form-group">
             <label for="associateName">Associate Name:</label>
-            <input type="text" id="associateName" placeholder="Enter Associate Name" oninput="showSuggestions(this.value)" required>
+            <input type="text" id="associateName" name="associateName" placeholder="Enter Associate Name" required>
             <ul id="suggestions" class="suggestions"></ul>
             <div class="error-message" id="associateNameError"></div>
         </div>
         <div class="form-group">
             <label for="status">Status:</label>
-            <select id="status" required>
+            <select id="status" name="status" required>
                 <option value="">Select Status</option>
                 <option value="Active">Active</option>
                 <option value="UBL">UBL</option>
@@ -356,22 +228,22 @@ initializeExcel().then(() => {
         </div>
         <div class="form-group">
             <label for="projectId">Project ID:</label>
-            <input type="text" id="projectId" placeholder="Enter Project ID" required>
+            <input type="text" id="projectId" name="projectId" placeholder="Enter Project ID" required>
             <div class="error-message" id="projectIdError"></div>
         </div>
         <div class="form-group">
             <label for="projectName">Project Name:</label>
-            <input type="text" id="projectName" placeholder="Enter Project Name" required>
+            <input type="text" id="projectName" name="projectName" placeholder="Enter Project Name" required>
             <div class="error-message" id="projectNameError"></div>
         </div>
         <div class="form-group">
             <label for="allocationStartDate">Allocation Start Date:</label>
-            <input type="date" id="allocationStartDate" placeholder="Enter Allocation Start Date" required>
+            <input type="text" id="allocationStartDate" name="allocationStartDate" placeholder="Enter Allocation Start Date" required>
             <div class="error-message" id="allocationStartDateError"></div>
         </div>
         <div class="form-group">
             <label for="onshoreOffshore">Onshore/Offshore:</label>
-            <select id="onshoreOffshore" required>
+            <select id="onshoreOffshore" name="onshoreOffshore" required>
                 <option value="">Select Onshore/Offshore</option>
                 <option value="Onshore">Onshore</option>
                 <option value="Offshore">Offshore</option>
@@ -380,18 +252,18 @@ initializeExcel().then(() => {
         </div>
         <div class="form-group">
             <label for="location">Location:</label>
-            <input type="text" id="location" placeholder="Enter Location" required>
+            <input type="text" id="location" name="location" placeholder="Enter Location" required>
             <div class="error-message" id="locationError"></div>
         </div>
         <div class="form-group">
             <label for="leaveDates">Leave Dates:</label>
-            <input type="text" id="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
+            <input type="text" id="leaveDates" name="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
             <div class="error-message" id="leaveDatesError"></div>
         </div>
         <ul id="leaveDatesList" class="leave-dates-list"></ul>
         <div class="form-group">
             <label for="leaveType">Leave Type:</label>
-            <select id="leaveType" required>
+            <select id="leaveType" name="leaveType" required>
                 <option value="">Select Leave Type</option>
                 <option value="PL">PL</option>
                 <option value="BLD">BLD</option>
@@ -423,375 +295,190 @@ initializeExcel().then(() => {
         </tbody>
     </table>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script>
     <script>
-        const MAX_LEAVES_PER_MONTH = 5; // Set the maximum number of leaves allowed per month
-        const LEAVE_COLORS = {
-            PL: { background: 'red', color: 'white' },
-            BLD: { background: 'darkgreen', color: 'white' }
-        };
-        const leaveDates = [];
-        let flatpickrInstance;
-
-        document.getElementById("submitBtn").addEventListener("click", async () => {
-            if (await validateForm()) {
-                const data = collectFormData();
-                if (leaveDates.length > MAX_LEAVES_PER_MONTH) {
-                    alert(`You can only take up to ${MAX_LEAVES_PER_MONTH} leaves in a month.`);
-                    return;
-                }
-
-                try {
-                    const response = await fetch('http://localhost:3000/submit', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    });
-
-                    if (response.ok) {
-                        alert("Data submitted successfully!");
-                        clearForm();
-                    } else {
-                        throw new Error('Failed to store data');
-                    }
-                } catch (error) {
-                    alert("Failed to store data. Please check the console.");
-                    console.error(error);
-                }
-            } else {
-                alert("Please correct the highlighted fields.");
-            }
-        });
-
-        function showSuggestions(value) {
-            if (value.length === 0) {
-                document.getElementById("suggestions").innerHTML = '';
-                return;
-            }
-
-            // Simulate fetching suggestions from Excel
-            const suggestions = ['John Doe', 'Jane Smith', 'Alice Johnson']; // Example suggestions
-            displaySuggestions(suggestions.filter(name => name.toLowerCase().includes(value.toLowerCase())));
-        }
-
-        function displaySuggestions(suggestions) {
-            const suggestionsList = document.getElementById("suggestions");
-            suggestionsList.innerHTML = '';
-            suggestions.forEach(suggestion => {
-                const li = document.createElement("li");
-                li.textContent = suggestion;
-                li.onclick = () => selectSuggestion(suggestion);
-                suggestionsList.appendChild(li);
-            });
-        }
-
-        function selectSuggestion(suggestion) {
-            document.getElementById("associateName").value = suggestion;
-            document.getElementById("suggestions").innerHTML = '';
-            fetchEmployeeData(suggestion);
-        }
-
-        function fetchEmployeeData(associateName) {
-            // Simulate fetching employee data from Excel
-            const employeeData = {
-                associateId: 'A123',
-                status: 'Active',
-                projectId: 'P456',
-                projectName: 'Project Alpha',
-                allocationStartDate: '2025-02-01',
-                onshoreOffshore: 'Offshore',
-                location: 'New York'
-            };
-            populateFormData(employeeData);
-        }
-
-        function populateFormData(data) {
-            document.getElementById("associateId").value = data.associateId;
-            document.getElementById("status").value = data.status;
-            document.getElementById("projectId").value = data.projectId;
-            document.getElementById("projectName").value = data.projectName;
-            document.getElementById("allocationStartDate").value = data.allocationStartDate;
-            document.getElementById("onshoreOffshore").value = data.onshoreOffshore;
-            document.getElementById("location").value = data.location;
-        }
-
-        function updateLeaveDatesList() {
-            const leaveDatesList = document.getElementById("leaveDatesList");
-            leaveDatesList.innerHTML = '';
-            leaveDates.forEach(date => {
-                const li = document.createElement("li");
-                li.textContent = date;
-                const removeButton = document.createElement("button");
-                removeButton.textContent = "Remove";
-                removeButton.onclick = () => removeLeaveDate(date);
-                li.appendChild(removeButton);
-                leaveDatesList.appendChild(li);
-            });
-        }
-
-        function removeLeaveDate(date) {
-            const index = leaveDates.indexOf(date);
-            if (index > -1) {
-                leaveDates.splice(index, 1);
-                updateLeaveDatesList();
-            }
-        }
-
-        async function validateForm() {
+        document.getElementById('submitBtn').addEventListener('click', function(event) {
+            event.preventDefault();
             let isValid = true;
 
-            // Validate Associate Name
-            const associateName = document.getElementById("associateName");
-            const associateNameError = document.getElementById("associateNameError");
-            if (!associateName.value) {
-                associateName.classList.add("invalid");
-                associateNameError.textContent = "Associate Name is required.";
-                isValid = false;
-            } else {
-                associateName.classList.remove("invalid");
-                associateNameError.textContent = "";
-            }
+            const associateId = document.getElementById('associateId');
+            const associateName = document.getElementById('associateName');
+            const status = document.getElementById('status');
+            const projectId = document.getElementById('projectId');
+            const projectName = document.getElementById('projectName');
+            const allocationStartDate = document.getElementById('allocationStartDate');
+            const onshoreOffshore = document.getElementById('onshoreOffshore');
+            const location = document.getElementById('location');
+            const leaveDates = document.getElementById('leaveDates');
+            const leaveType = document.getElementById('leaveType');
 
-            // Validate Associate ID
-            const associateId = document.getElementById("associateId");
-            const associateIdError = document.getElementById("associateIdError");
-            if (!associateId.value) {
-                associateId.classList.add("invalid");
-                associateIdError.textContent = "Associate ID is required.";
-                isValid = false;
-            } else {
-                associateId.classList.remove("invalid");
-                associateIdError.textContent = "";
-            }
+            const fields = [
+                { field: associateId, errorId: 'associateIdError' },
+                { field: associateName, errorId: 'associateNameError' },
+                { field: status, errorId: 'statusError' },
+                { field: projectId, errorId: 'projectIdError' },
+                { field: projectName, errorId: 'projectNameError' },
+                { field: allocationStartDate, errorId: 'allocationStartDateError' },
+                { field: onshoreOffshore, errorId: 'onshoreOffshoreError' },
+                { field: location, errorId: 'locationError' },
+                { field: leaveDates, errorId: 'leaveDatesError' },
+                { field: leaveType, errorId: 'leaveTypeError' }
+            ];
 
-            // Validate Status
-            const status = document.getElementById("status");
-            const statusError = document.getElementById("statusError");
-            if (!status.value) {
-                status.classList.add("invalid");
-                statusError.textContent = "Status is required.";
-                isValid = false;
-            } else {
-                status.classList.remove("invalid");
-                statusError.textContent = "";
-            }
-
-            // Validate Project ID
-            const projectId = document.getElementById("projectId");
-            const projectIdError = document.getElementById("projectIdError");
-            if (!projectId.value) {
-                projectId.classList.add("invalid");
-                projectIdError.textContent = "Project ID is required.";
-                isValid = false;
-            } else {
-                projectId.classList.remove("invalid");
-                projectIdError.textContent = "";
-            }
-
-            // Validate Project Name
-            const projectName = document.getElementById("projectName");
-            const projectNameError = document.getElementById("projectNameError");
-            if (!projectName.value) {
-                projectName.classList.add("invalid");
-                projectNameError.textContent = "Project Name is required.";
-                isValid = false;
-            } else {
-                projectName.classList.remove("invalid");
-                projectNameError.textContent = "";
-            }
-
-            // Validate Allocation Start Date
-            const allocationStartDate = document.getElementById("allocationStartDate");
-            const allocationStartDateError = document.getElementById("allocationStartDateError");
-            if (!allocationStartDate.value) {
-                allocationStartDate.classList.add("invalid");
-                allocationStartDateError.textContent = "Allocation Start Date is required.";
-                isValid = false;
-            } else {
-                allocationStartDate.classList.remove("invalid");
-                allocationStartDateError.textContent = "";
-            }
-
-            // Validate Onshore/Offshore
-            const onshoreOffshore = document.getElementById("onshoreOffshore");
-            const onshoreOffshoreError = document.getElementById("onshoreOffshoreError");
-            if (!onshoreOffshore.value) {
-                onshoreOffshore.classList.add("invalid");
-                onshoreOffshoreError.textContent = "Onshore/Offshore is required.";
-                isValid = false;
-            } else {
-                onshoreOffshore.classList.remove("invalid");
-                onshoreOffshoreError.textContent = "";
-            }
-
-            // Validate Location
-            const location = document.getElementById("location");
-            const locationError = document.getElementById("locationError");
-            if (!location.value) {
-                location.classList.add("invalid");
-                locationError.textContent = "Location is required.";
-                isValid = false;
-            } else {
-                location.classList.remove("invalid");
-                locationError.textContent = "";
-            }
-
-            // Validate Leave Dates
-            const leaveDatesError = document.getElementById("leaveDatesError");
-            if (leaveDates.length === 0) {
-                leaveDatesError.textContent = "At least one leave date is required.";
-                isValid = false;
-            } else {
-                leaveDatesError.textContent = "";
-            }
-
-            // Validate Leave Type
-            const leaveType = document.getElementById("leaveType");
-            const leaveTypeError = document.getElementById("leaveTypeError");
-            if (!leaveType.value) {
-                leaveType.classList.add("invalid");
-                leaveTypeError.textContent = "Leave Type is required.";
-                isValid = false;
-            } else {
-                leaveType.classList.remove("invalid");
-                leaveTypeError.textContent = "";
-            }
-            return isValid;
-        }
-
-        function collectFormData() {
-            const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
-            const data = {};
-            fields.forEach(field => {
-                data[field] = document.getElementById(field).value;
+            fields.forEach(({ field, errorId }) => {
+                const errorMessage = document.getElementById(errorId);
+                if (!field.value) {
+                    field.classList.add('invalid');
+                    errorMessage.textContent = 'This field is required';
+                    isValid = false;
+                } else {
+                    field.classList.remove('invalid');
+                    errorMessage.textContent = '';
+                }
             });
-            data.leaveDates = leaveDates;
-            return data;
-        }
-        function clearForm() {
-            const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
-            fields.forEach(field => {
-                document.getElementById(field).value = '';
-                document.getElementById(field).classList.remove("invalid");
-                document.getElementById(`${field}Error`).textContent = '';
-            });
-            leaveDates.length = 0;
-            updateLeaveDatesList();
-            flatpickrInstance.clear(); // Clear the Flatpickr instance
-        }
 
-        // Initialize Flatpickr for multiple date selection with a limit of 5 dates
-        flatpickrInstance = flatpickr("#leaveDates", {
+            if (isValid) {
+                const formData = {
+                    associateId: associateId.value,
+                    associateName: associateName.value,
+                    status: status.value,
+                    projectId: projectId.value,
+                    projectName: projectName.value,
+                    allocationStartDate: allocationStartDate.value,
+                    onshoreOffshore: onshoreOffshore.value,
+                    location: location.value,
+                    leaveDates: leaveDates.value,
+                    leaveType: leaveType.value
+                };
+
+                fetch('/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        alert('Form submitted successfully!');
+                        // Optionally, update the live table with the new data
+                        const tableBody = document.querySelector('#liveTable tbody');
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td>${new Date().toLocaleString()}</td>
+                            <td>${formData.associateId}</td>
+                            <td>${formData.associateName}</td>
+                            <td>${formData.status}</td>
+                            <td>${formData.projectId}</td>
+                            <td>${formData.projectName}</td>
+                            <td>${formData.allocationStartDate}</td>
+                            <td>${formData.onshoreOffshore}</td>
+                            <td>${formData.location}</td>
+                            <td>${formData.leaveDates}</td>
+                            <td>${formData.leaveType}</td>
+                        `;
+                        tableBody.appendChild(newRow);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+
+        // Initialize Flatpickr on date input fields
+        flatpickr("#allocationStartDate", {
+            dateFormat: "Y-m-d"
+        });
+
+        flatpickr("#leaveDates", {
             mode: "multiple",
             dateFormat: "Y-m-d",
-            onChange: function (selectedDates, dateStr, instance) {
-                if (selectedDates.length > MAX_LEAVES_PER_MONTH) {
-                    alert(`You can only select up to ${MAX_LEAVES_PER_MONTH} leave dates.`);
-                    selectedDates.splice(MAX_LEAVES_PER_MONTH);
-                    instance.setDate(selectedDates);
-                }
-                leaveDates.length = 0;
+            onChange: function(selectedDates, dateStr, instance) {
+                const leaveDatesList = document.getElementById('leaveDatesList');
+                leaveDatesList.innerHTML = ''; // Clear existing list
+
                 selectedDates.forEach(date => {
-                    leaveDates.push(instance.formatDate(date, "Y-m-d"));
+                    const listItem = document.createElement('li');
+                    listItem.textContent = date.toISOString().split('T')[0];
+
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'Remove';
+                    removeButton.addEventListener('click', function() {
+                        instance.setDate(instance.selectedDates.filter(d => d !== date), true);
+                        listItem.remove();
+                    });
+
+                    listItem.appendChild(removeButton);
+                    leaveDatesList.appendChild(listItem);
                 });
-                updateLeaveDatesList();
             }
         });
-
-        // Socket.io Client Integration
-        const socket = io('http://localhost:3000');
-        let retryCount = 0;
-
-        socket.on('connect', () => {
-            console.log('Connected to real-time server');
-            retryCount = 0;
-        });
-
-        socket.on('dataUpdated', (newData) => {
-            alert(`New leave entry added: ${newData.associateName}`);
-            addToLiveTable(newData);
-        });
-
-        socket.on('connect_error', (err) => {
-            console.error('Connection Error:', err);
-            if (retryCount < 5) {
-                setTimeout(() => socket.connect(), Math.pow(2, retryCount) * 1000);
-                retryCount++;
-            }
-        });
-
-        async function submitForm() {
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<div class="spinner"></div> Submitting...';
-
-            try {
-                const response = await fetchWithRetry('http://localhost:3000/submit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(collectFormData())
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Submission failed');
-                }
-
-                alert('Data submitted successfully!');
-            } catch (error) {
-                alert(error.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit';
-            }
-        }
-
-        async function fetchWithRetry(url, options, retries = 3) {
-            try {
-                const response = await fetch(url, options);
-                if (response.status === 503) {
-                    const retryAfter = response.headers.get('Retry-After') || 5;
-                    await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                    return fetchWithRetry(url, options, retries - 1);
-                }
-                return response;
-            } catch (err) {
-                if (retries <= 0) throw err;
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                return fetchWithRetry(url, options, retries - 1);
-            }
-        }
-
-        function addToLiveTable(newData) {
-            const liveTable = document.getElementById('liveTable').getElementsByTagName('tbody')[0];
-            const newRow = liveTable.insertRow();
-
-            const timestampCell = newRow.insertCell(0);
-            const associateIdCell = newRow.insertCell(1);
-            const associateNameCell = newRow.insertCell(2);
-            const statusCell = newRow.insertCell(3);
-            const projectIdCell = newRow.insertCell(4);
-            const projectNameCell = newRow.insertCell(5);
-            const allocationStartDateCell = newRow.insertCell(6);
-            const onshoreOffshoreCell = newRow.insertCell(7);
-            const locationCell = newRow.insertCell(8);
-            const leaveDateCell = newRow.insertCell(9);
-            const leaveTypeCell = newRow.insertCell(10);
-
-            timestampCell.textContent = newData.timestamp;
-            associateIdCell.textContent = newData.associateId;
-            associateNameCell.textContent = newData.associateName;
-            statusCell.textContent = newData.status;
-            projectIdCell.textContent = newData.projectId;
-            projectNameCell.textContent = newData.projectName;
-            allocationStartDateCell.textContent = newData.allocationStartDate;
-            onshoreOffshoreCell.textContent = newData.onshoreOffshore;
-            locationCell.textContent = newData.location;
-            leaveDateCell.textContent = newData.leaveDate;
-            leaveTypeCell.textContent = newData.leaveType;
-        }
     </script>
 </body>
 </html>
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const XLSX = require('xlsx');
+const fs = require('fs');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/index.html');
+});
+
+app.post('/submit', (req, res) => {
+    const {
+        associateId,
+        associateName,
+        status,
+       Date,
+        onshoreOffshore,
+        location,
+        leaveDates,
+        leaveType
+    } = req.body;
+
+    if (!associateId || !associateName || !status || !projectId || !projectName || !allocationStartDate || !onshoreOffshore || !location || !leaveDates || !leaveType) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    console.log('Form Data:', req.body); // Log the form data
+
+    const filePath = 'C:/Users/2308397/PilotProject-Ally/attandence.xlsx';
+    let workbook;
+    if (fs.existsSync(filePath)) {
+        workbook = XLSX.readFile(filePath);
+    } else {
+        workbook = XLSX.utils.book_new();
+    }
+
+    const sheetName = 'Sheet1';
+    let worksheet = workbook.Sheets[sheetName];
+    if (!worksheet) {
+        worksheet = XLSX.utils.aoa_to_sheet([[
+            'Associate ID', 'Associate Name', 'Status', 'Project ID', 'Project Name',
+            'Allocation Start Date', 'Onshore/Offshore', 'Location', 'Leave Dates', 'Leave Type'
+        ]]);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    }
+
+    const newRow = [
+        associateId, associateName, status, projectId, projectName,
+        allocationStartDate, onshoreOffshore, location, leaveDates, leaveType
+    ];
+    XLSX.utils.sheet_add_aoa(worksheet, [newRow], { origin: -1 });
+
+    XLSX.writeFile(workbook, filePath);
+
+    console.log('Data written to Excel file'); // Log confirmation
+
+    res.json({ message: 'Form submitted successfully!' });
+});
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
