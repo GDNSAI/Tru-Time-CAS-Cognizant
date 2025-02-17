@@ -1,88 +1,8 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const ExcelJS = require('exceljs');
-const path = require('path');
-
-const app = express();
-const port = 3000;
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.post('/submit', async (req, res) => {
-    const {
-        associateId,
-        associateName,
-        status,
-        projectId,
-        projectName,
-        allocationStartDate,
-        onshoreOffshore,
-        location,
-        leaveDates,
-        leaveType
-    } = req.body;
-
-    // Log the received data for debugging
-    console.log('Received data:', req.body);
-
-    // Check for missing required fields
-    const missingFields = [];
-    if (!associateId) missingFields.push('associateId');
-    if (!associateName) missingFields.push('associateName');
-    if (!status) missingFields.push('status');
-    if (!projectId) missingFields.push('projectId');
-    if (!projectName) missingFields.push('projectName');
-    if (!allocationStartDate) missingFields.push('allocationStartDate');
-    if (!onshoreOffshore) missingFields.push('onshoreOffshore');
-    if (!location) missingFields.push('location');
-    if (!leaveDates) missingFields.push('leaveDates');
-    if (!leaveType) missingFields.push('leaveType');
-
-    if (missingFields.length > 0) {
-        console.log('Missing fields:', missingFields);
-        return res.status(400).json({ error: "Missing required fields", missingFields });
-    }
-
-    const workbook = new ExcelJS.Workbook();
-    const filePath = 'C:/Users/2308397/PilotProject-Ally/PilotProject-Ally.xlsx';
-
-    try {
-        await workbook.xlsx.readFile(filePath);
-    } catch (error) {
-        workbook.addWorksheet('Attendance');
-    }
-
-    const worksheet = workbook.getWorksheet('Attendance');
-
-    const newRow = {
-        timestamp: new Date().toISOString(),
-        associateId,
-        associateName,
-        status,
-        projectId,
-        projectName,
-        allocationStartDate,
-        onshoreOffshore,
-        location,
-        leaveDates,
-        leaveType
-    };
-
-    worksheet.addRow(newRow);
-
-    await workbook.xlsx.writeFile(filePath);
-
-    res.send('Data saved successfully!');
-});
-
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Management</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
@@ -176,86 +96,6 @@ app.listen(port, () => {
             font-weight: 700;
         }
 
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        ul li {
-            background: #f9f9f9;
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ed97de;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        ul li button {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-
-        ul li button:hover {
-            background: #c0392b;
-        }
-
-        .suggestions {
-            position: absolute;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            max-height: 150px;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-
-        .suggestions li {
-            padding: 10px;
-            cursor: pointer;
-        }
-
-        .suggestions li:hover {
-            background: #f0f0f0;
-        }
-
-        .leave-dates-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .leave-dates-list li {
-            flex: 1 1 calc(33.333% - 10px);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: #f9f9f9;
-            border: 1px solid #ed97de;
-            border-radius: 5px;
-        }
-
-        .leave-dates-list li button {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-
-        .leave-dates-list li button:hover {
-            background: #c0392b;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
@@ -287,81 +127,77 @@ app.listen(port, () => {
 </head>
 <body>
     <h2>Attendance Management Form</h2>
-    <form action="/submit" method="post">
-        <div class="form-container">
-            <div class="form-group">
-                <label for="associateId">Associate ID:</label>
-                <input type="number" id="associateId" name="associateId" placeholder="Enter Associate ID" required>
-                <ul id="idSuggestions" class="suggestions"></ul>
-                <div class="error-message" id="associateIdError"></div>
-            </div>
-            <div class="form-group">
-                <label for="associateName">Associate Name:</label>
-                <input type="text" id="associateName" name="associateName" placeholder="Enter Associate Name" required>
-                <ul id="nameSuggestions" class="suggestions"></ul>
-                <div class="error-message" id="associateNameError"></div>
-            </div>
-            <div class="form-group">
-                <label for="status">Status:</label>
-                <select id="status" name="status" required>
-                    <option value="">Select Status</option>
-                    <option value="Active">Active</option>
-                    <option value="UBL">UBL</option>
-                </select>
-                <div class="error-message" id="statusError"></div>
-            </div>
-            <div class="form-group">
-                <label for="projectId">Project ID:</label>
-                <input type="number" id="projectId" name="projectId" placeholder="Enter Project ID" required>
-                <div class="error-message" id="projectIdError"></div>
-            </div>
-            <div class="form-group">
-                <label for="projectName">Project Name:</label>
-                <input type="text" id="projectName" name="projectName" placeholder="Enter Project Name" required>
-                <div class="error-message" id="projectNameError"></div>
-            </div>
-            <div class="form-group">
-                <label for="allocationStartDate">Allocation Start Date:</label>
-                <input type="date" id="allocationStartDate" name="allocationStartDate" required>
-                <div class="error-message" id="allocationStartDateError"></div>
-            </div>
-            <div class="form-group">
-                <label for="onshoreOffshore">Onshore/Offshore:</label>
-                <select id="onshoreOffshore" name="onshoreOffshore" required>
-                    <option value="">Select Onshore/Offshore</option>
-                    <option value="Onshore">Onshore</option>
-                    <option value="Offshore">Offshore</option>
-                </select>
-                <div class="error-message" id="onshoreOffshoreError"></div>
-            </div>
-            <div class="form-group">
-                <label for="location">Location:</label>
-                <input type="text" id="location" name="location" placeholder="Enter Location" required>
-                <div class="error-message" id="locationError"></div>
-            </div>
-            <div class="form-group">
-                <label for="leaveDates">Leave Dates:</label>
-                <input type="text" id="leaveDates" name="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
-                <div class="error-message" id="leaveDatesError"></div>
-            </div>
-            <ul id="leaveDatesList" class="leave-dates-list"></ul>
-            <div class="form-group">
-                <label for="leaveType">Leave Type:</label>
-                <select id="leaveType" name="leaveType" required>
-                    <option value="">Select Leave Type</option>
-                    <option value="PL">PL</option>
-                    <option value="BLD">BLD</option>
-                </select>
-                <div class="error-message" id="leaveTypeError"></div>
-            </div>
+    <div class="form-container">
+        <div class="form-group">
+            <label for="associateId">Associate ID:</label>
+            <input type="number" id="associateId" placeholder="Enter Associate ID" required>
+            <div class="error-message" id="associateIdError"></div>
         </div>
-        <div class="button-container">
-            <button type="submit" id="submitBtn"></button>
+        <div class="form-group">
+            <label for="associateName">Associate Name:</label>
+            <input type="text" id="associateName" placeholder="Enter Associate Name" required>
+            <div class="error-message" id="associateNameError"></div>
         </div>
-    </form>
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" required>
+                <option value="">Select Status</option>
+                <option value="Active">Active</option>
+                <option value="UBL">UBL</option>
+            </select>
+            <div class="error-message" id="statusError"></div>
+        </div>
+        <div class="form-group">
+            <label for="projectId">Project ID:</label>
+            <input type="number" id="projectId" placeholder="Enter Project ID" required>
+            <div class="error-message" id="projectIdError"></div>
+        </div>
+        <div class="form-group">
+            <label for="projectName">Project Name:</label>
+            <input type="text" id="projectName" placeholder="Enter Project Name" required>
+            <div class="error-message" id="projectNameError"></div>
+        </div>
+        <div class="form-group">
+            <label for="allocationStartDate">Allocation Start Date:</label>
+            <input type="date" id="allocationStartDate" required>
+            <div class="error-message" id="allocationStartDateError"></div>
+        </div>
+        <div class="form-group">
+            <label for="onshoreOffshore">Onshore/Offshore:</label>
+            <select id="onshoreOffshore" required>
+                <option value="">Select Onshore/Offshore</option>
+                <option value="Onshore">Onshore</option>
+                <option value="Offshore">Offshore</option>
+            </select>
+            <div class="error-message" id="onshoreOffshoreError"></div>
+        </div>
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <input type="text" id="location" placeholder="Enter Location" required>
+            <div class="error-message" id="locationError"></div>
+        </div>
+        <div class="form-group">
+            <label for="leaveDates">Leave Dates:</label>
+            <input type="text" id="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
+            <div class="error-message" id="leaveDatesError"></div>
+        </div>
+        <div class="form-group">
+            <label for="leaveType">Leave Type:</label>
+            <select id="leaveType" required>
+                <option value="">Select Leave Type</option>
+                <option value="PL">PL</option>
+                <option value="BLD">BLD</option>
+            </select>
+            <div class="error-message" id="leaveTypeError"></div>
+        </div>
+    </div>
+    <div class="button-container">
+        <button id="submitBtn">Submit</button>
+    </div>
     <table id="liveTable">
         <thead>
             <tr>
+                <th>ID</th>
                 <th>Timestamp</th>
                 <th>Associate ID</th>
                 <th>Associate Name</th>
@@ -379,19 +215,85 @@ app.listen(port, () => {
             <!-- Live data rows will be added here -->
         </tbody>
     </table>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            flatpickr("#allocationStartDate", {
-                dateFormat: "Y-m-d"
-            });
+            let currentId = 0; // This will track the auto-incrementing ID for each row
+
+            // Initialize flatpickr for leaveDates
             flatpickr("#leaveDates", {
                 mode: "multiple",
-                dateFormat: "Y-m-d"
+                dateFormat: "Y-m-d",
             });
+
+            // Add event listener for form validation and submit button
+            document.getElementById('submitBtn').addEventListener('click', function (e) {
+                e.preventDefault();
+                if (validateForm()) {
+                    addRowToTable();
+                }
+            });
+
+            // Function to validate form fields
+            function validateForm() {
+                let isValid = true;
+                const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveDates', 'leaveType'];
+
+                fields.forEach(field => {
+                    const input = document.getElementById(field);
+                    if (!input.value) {
+                        document.getElementById(field + 'Error').innerText = 'This field is required';
+                        isValid = false;
+                    } else {
+                        document.getElementById(field + 'Error').innerText = '';
+                    }
+                });
+
+                return isValid;
+            }
+
+            // Function to add a new row to the live table with auto-incremental ID
+            function addRowToTable() {
+                const table = document.getElementById('liveTable').getElementsByTagName('tbody')[0];
+                const row = table.insertRow();
+
+                const timestamp = new Date().toLocaleString();
+                const associateId = document.getElementById('associateId').value;
+                const associateName = document.getElementById('associateName').value;
+                const status = document.getElementById('status').value;
+                const projectId = document.getElementById('projectId').value;
+                const projectName = document.getElementById('projectName').value;
+                const allocationStartDate = document.getElementById('allocationStartDate').value;
+                const onshoreOffshore = document.getElementById('onshoreOffshore').value;
+                const location = document.getElementById('location').value;
+                const leaveDates = document.getElementById('leaveDates').value;
+                const leaveType = document.getElementById('leaveType').value;
+
+                // Increment ID for each new entry
+                currentId++;
+
+                // Insert the new row
+                row.insertCell(0).innerText = currentId; // Auto Increment ID
+                row.insertCell(1).innerText = timestamp;
+                row.insertCell(2).innerText = associateId;
+                row.insertCell(3).innerText = associateName;
+                row.insertCell(4).innerText = status;
+                row.insertCell(5).innerText = projectId;
+                row.insertCell(6).innerText = projectName;
+                row.insertCell(7).innerText = allocationStartDate;
+                row.insertCell(8).innerText = onshoreOffshore;
+                row.insertCell(9).innerText = location;
+                row.insertCell(10).innerText = leaveDates;
+                row.insertCell(11).innerText = leaveType;
+
+                // Reset the form after submission
+                document.querySelector('.form-container').reset();
+            }
         });
     </script>
 </body>
 </html>
+
+
 
