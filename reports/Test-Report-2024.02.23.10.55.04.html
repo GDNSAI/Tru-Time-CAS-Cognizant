@@ -232,6 +232,7 @@
                 e.preventDefault();
                 if (validateForm()) {
                     addRowToTable();
+                    sendDataToBackend();
                 }
             });
 
@@ -290,11 +291,39 @@
                 // Reset the form after submission
                 document.querySelector('.form-container').reset();
             }
+
+            // Function to send data to the backend
+            function sendDataToBackend() {
+                const formData = new FormData();
+                formData.append('associateId', document.getElementById('associateId').value);
+                formData.append('associateName', document.getElementById('associateName').value);
+                formData.append('status', document.getElementById('status').value);
+                formData.append('projectId', document.getElementById('projectId').value);
+                formData.append('projectName', document.getElementById('projectName').value);
+                formData.append('allocationStartDate', document.getElementById('allocationStartDate').value);
+                formData.append('onshoreOffshore', document.getElementById('onshoreOffshore').value);
+                formData.append('location', document.getElementById('location').value);
+                formData.append('leaveDates', document.getElementById('leaveDates').value);
+                formData.append('leaveType', document.getElementById('leaveType').value);
+
+                fetch('/submit', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        alert('Data saved successfully');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
         });
     </script>
 </body>
 </html>
-
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -366,8 +395,16 @@ app.post('/submit', async (req, res) => {
     }
 
     const worksheet = workbook.getWorksheet('Attendance');
+    
+    // Check if the associateId already exists
+    const existingRow = worksheet.getRows(1, worksheet.rowCount).find(row => row.getCell('associateId').value === associateId);
+    
+    if (existingRow) {
+        return res.status(400).json({ error: `Data for Associate ID ${associateId} already exists!` });
+    }
+
     const newRow = {
-        id: worksheet.rowCount,
+        id: worksheet.rowCount + 1,
         timestamp: new Date().toISOString(),
         associateId,
         associateName,
@@ -385,7 +422,7 @@ app.post('/submit', async (req, res) => {
 
     await workbook.xlsx.writeFile(filePath);
 
-    res.send('Data saved successfully!');
+    res.send({ message: 'Data saved successfully!' });
 });
 
 app.listen(port, () => {
