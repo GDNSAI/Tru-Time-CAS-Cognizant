@@ -1,3 +1,235 @@
+Sure, let's continue with the rest of the HTML and JavaScript code:
+
+        // Initialize Flatpickr for multiple date selection with a limit of 5 dates
+        flatpickrInstance = flatpickr("#leaveDates", {
+            mode: "multiple",
+            dateFormat: "Y-m-d",
+            onChange: function (selectedDates, dateStr, instance) {
+                if (selectedDates.length > MAX_LEAVES_PER_MONTH) {
+                    alert(`You can only select up to ${MAX_LEAVES_PER_MONTH} leave dates.`);
+                    selectedDates.splice(MAX_LEAVES_PER_MONTH);
+                    instance.setDate(selectedDates);
+                }
+                leaveDates.length = 0;
+                selectedDates.forEach(date => {
+                    leaveDates.push(instance.formatDate(date, "Y-m-d"));
+                });
+                updateLeaveDatesList();
+            }
+        });
+    </script>
+</body>
+</html>
+Node.js Server (server.js)
+const express = require('express');
+const ExcelJS = require('exceljs');
+const cors = require('cors');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+const port = 3000;
+
+app.use(cors());
+app.use(express.json());
+
+const excelFilePath = './attendance.xlsx';
+
+async function initializeExcel() {
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.readFile(excelFilePath);
+  } catch (error) {
+    const worksheet = workbook.addWorksheet('Attendance');
+    worksheet.columns = [
+      { header: 'Associate ID', key: 'associateId' },
+      { header: 'Associate Name', key: 'associateName' },
+      { header: 'Status', key: 'status' },
+      { header: 'Project ID', key: 'projectId' },
+      { header: 'Project Name', key: 'projectName' },
+      { header: 'Allocation Start Date', key: 'allocationStartDate' },
+      { header: 'Onshore/Offshore', key: 'onshoreOffshore' },
+      { header: 'Location', key: 'location' },
+      { header: 'Leave Date', key: 'leaveDate' },
+      { header: 'Leave Type', key: 'leaveType' }
+    ];
+    await workbook.xlsx.writeFile(excelFilePath);
+  }
+}
+
+initializeExcel();
+
+app.post('/submit', async (req, res) => {
+  try {
+    const data = req.body;
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(excelFilePath);
+    const worksheet = workbook.getWorksheet('Attendance');
+
+    data.leaveDates.forEach(leaveDate => {
+      worksheet.addRow({
+        associateId: data.associateId,
+        associateName: data.associateName,
+        status: data.status,
+        projectId: data.projectId,
+        projectName: data.projectName,
+        allocationStartDate: data.allocationStartDate,
+        onshoreOffshore: data.onshoreOffshore,
+        location: data.location,
+        leaveDate: leaveDate,
+        leaveType: data.leaveType
+      });
+    });
+
+    await workbook.xlsx.writeFile(excelFilePath);
+    io.emit('dataUpdated', data); // Emit an event to notify clients of data update
+    res.status(200).send('Data stored successfully');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error storing data');
+  }
+});
+
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+Install Dependencies
+In your project directory, install the necessary dependencies:
+
+npm install express exceljs cors socket.io
+Run the Server
+Start the Node.js server:
+
+node server.js
+Summary
+Backend Integration:
+
+Created a Node.js/Express server to handle form submissions.
+Used ExcelJS to read/write Excel files.
+Data is stored in a structured format with one row per leave date.
+Used Socket.io for real-time updates.
+Frontend Integration:
+
+Created a dynamic UI using HTML and JavaScript.
+Used Flatpickr for date selection.
+Communicated with the backend in real-time using Socket.io.
+Automation:
+
+No manual intervention needed after form submission.
+Excel file is automatically created if it doesn't exist.
+Data is appended to the existing Excel file.
+Real-time updates ensure the UI is always live.
+Feel free to ask if you need any further assistance!
+
+
+Edit in Pages
+
+
+
+
+AI-generated content may be incorrect
+You said:
+
+now give clearly how to do what to do in step by step
+Copilot said:
+Copilot
+Sure! Let's break down the process step-by-step to set up a fully automated system where your UI is always live and requires no manual intervention. We'll use Node.js, Express, ExcelJS, and a simple HTML form with JavaScript.
+
+Step 1: Set Up the Node.js Server
+Create a new directory for your project and navigate into it:
+
+mkdir attendance-management
+cd attendance-management
+Initialize a new Node.js project:
+
+npm init -y
+Install the necessary dependencies:
+
+npm install express exceljs cors socket.io
+Create a file named server.js and add the following code:
+
+const express = require('express');
+const ExcelJS = require('exceljs');
+const cors = require('cors');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+const port = 3000;
+
+app.use(cors());
+app.use(express.json());
+
+const excelFilePath = './attendance.xlsx';
+
+async function initializeExcel() {
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.readFile(excelFilePath);
+  } catch (error) {
+    const worksheet = workbook.addWorksheet('Attendance');
+    worksheet.columns = [
+      { header: 'Associate ID', key: 'associateId' },
+      { header: 'Associate Name', key: 'associateName' },
+      { header: 'Status', key: 'status' },
+      { header: 'Project ID', key: 'projectId' },
+      { header: 'Project Name', key: 'projectName' },
+      { header: 'Allocation Start Date', key: 'allocationStartDate' },
+      { header: 'Onshore/Offshore', key: 'onshoreOffshore' },
+      { header: 'Location', key: 'location' },
+      { header: 'Leave Date', key: 'leaveDate' },
+      { header: 'Leave Type', key: 'leaveType' }
+    ];
+    await workbook.xlsx.writeFile(excelFilePath);
+  }
+}
+
+initializeExcel();
+
+app.post('/submit', async (req, res) => {
+  try {
+    const data = req.body;
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(excelFilePath);
+    const worksheet = workbook.getWorksheet('Attendance');
+
+    data.leaveDates.forEach(leaveDate => {
+      worksheet.addRow({
+        associateId: data.associateId,
+        associateName: data.associateName,
+        status: data.status,
+        projectId: data.projectId,
+        projectName: data.projectName,
+        allocationStartDate: data.allocationStartDate,
+        onshoreOffshore: data.onshoreOffshore,
+        location: data.location,
+        leaveDate: leaveDate,
+        leaveType: data.leaveType
+      });
+    });
+
+    await workbook.xlsx.writeFile(excelFilePath);
+    io.emit('dataUpdated', data); // Emit an event to notify clients of data update
+    res.status(200).send('Data stored successfully');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error storing data');
+  }
+});
+
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+Run the server:
+
+node server.js
+Step 2: Create the HTML Form
+Create an index.html file in the same directory and add the following code:
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -211,393 +443,480 @@
             <div class="error-message" id="associateIdError"></div>
         </div>
         <div class="form-group">
-            <label for="associateName">Associate Name:</label>
-            <input type="text" id="associateName" placeholder="Enter Associate Name" oninput="showSuggestions(this.value)" required>
-            <ul id="suggestions" class="suggestions"></ul>
-            <div class="error-message" id="associateNameError"></div>
-        </div>
-        <div class="form-group">
-            <label for="status">Status:</label>
-            <select id="status" required>
-                <option value="">Select Status</option>
-                <option value="Active">Active</option>
-                <option value="UBL">UBL</option>
-            </select>
-            <div class="error-message" id="statusError"></div>
-        </div>
-        <div class="form-group">
-            <label for="projectId">Project ID:</label>
-            <input type="text" id="projectId" placeholder="Enter Project ID" required>
-            <div class="error-message" id="projectIdError"></div>
-        </div>
-        <div class="form-group">
-            <label for="projectName">Project Name:</label>
-            <input type="text" id="projectName" placeholder="Enter Project Name" required>
-            <div class="error-message" id="projectNameError"></div>
-        </div>
-        <div class="form-group">
-            <label for="allocationStartDate">Allocation Start Date:</label>
-            <input type="date" id="allocationStartDate" placeholder="Enter Allocation Start Date" required>
-            <div class="error-message" id="allocationStartDateError"></div>
-        </div>
-        <div class="form-group">
-            <label for="onshoreOffshore">Onshore/Offshore:</label>
-            <select id="onshoreOffshore" required>
-                <option value="">Select Onshore/Offshore</option>
-                <option value="Onshore">Onshore</option>
-                <option value="Offshore">Offshore</option>
-            </select>
-            <div class="error-message" id="onshoreOffshoreError"></div>
-        </div>
-        <div class="form-group">
-            <label for="location">Location:</label>
-            <input type="text" id="location" placeholder="Enter Location" required>
-            <div class="error-message" id="locationError"></div>
-        </div>
-        <div class="form-group">
-            <label for="leaveDates">Leave Dates:</label>
-            <input type="text" id="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
-            <div class="error-message" id="leaveDatesError"></div>
-        </div>
-        <ul id="leaveDatesList" class="leave-dates-list"></ul>
-        <div class="form-group">
-            <label for="leaveType">Leave Type:</label>
-            <select id="leaveType" required>
-                <option value="">Select Leave Type</option>
-                <option value="PL">PL</option>
-                <option value="BLD">BLD</option>
-            </select>
-            <div class="error-message" id="leaveTypeError"></div>
-        </div>
-    </div>
-    <div class="button-container">
-        <button id="submitBtn">Submit</button>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-        const MAX_LEAVES_PER_MONTH = 5; // Set the maximum number of leaves allowed per month
-        const LEAVE_COLORS = {
-            PL: { background: 'red', color: 'white' },
-            BLD: { background: 'darkgreen', color: 'white' }
-        };
-        const leaveDates = [];
-        let flatpickrInstance;
+            <label for="associate
 
-        document.getElementById("submitBtn").addEventListener("click", async () => {
-            if (await validateForm()) {
-                const data = collectFormData();
-                if (leaveDates.length > MAX_LEAVES_PER_MONTH) {
-                    alert(`You can only take up to ${MAX_LEAVES_PER_MONTH} leaves in a month.`);
-                } else {
-                    try {
-                        await sendToPowerAutomate(data);
-                        alert("Data submitted successfully!");
-                        clearForm();
-                    } catch (error) {
-                        alert("Failed to store data in Excel.");
-                    }
-                }
-            } else {
-                alert("Please correct the highlighted fields.");
-            }
-        });
+Edit in Pages
 
-        async function sendToPowerAutomate(data) {
-            const response = await fetch('YOUR_POWER_AUTOMATE_FLOW_URL', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-            if (!response.ok) {
-                throw new Error('Failed to send data to Power Automate');
-            }
-        }
 
-        function showSuggestions(value) {
-            if (value.length === 0) {
-                document.getElementById("suggestions").innerHTML = '';
-                return;
-            }
 
-            // Simulate fetching suggestions from Excel
-            const suggestions = ['John Doe', 'Jane Smith', 'Alice Johnson']; // Example suggestions
-            displaySuggestions(suggestions.filter(name => name.toLowerCase().includes(value.toLowerCase())));
-        }
 
-        function displaySuggestions(suggestions) {
-            const suggestionsList = document.getElementById("suggestions");
-            suggestionsList.innerHTML = '';
-            suggestions.forEach(suggestion => {
-                const li = document.createElement("li");
-                li.textContent = suggestion;
-                li.onclick = () => selectSuggestion(suggestion);
-                suggestionsList.appendChild(li);
-            });
-        }
+AI-generated content may be incorrect
+You said:
 
-        function selectSuggestion(suggestion) {
-            document.getElementById("associateName").value = suggestion;
-            document.getElementById("suggestions").innerHTML = '';
-            fetchEmployeeData(suggestion);
-        }
+continue
+Copilot said:
+Copilot
+Sure, let's continue with the rest of the HTML and JavaScript code:
 
-        function fetchEmployeeData(associateName) {
-            // Simulate fetching employee data from Excel
-            const employeeData = {
-                associateId: 'A123',
-                status: 'Active',
-                projectId: 'P456',
-                projectName: 'Project Alpha',
-                allocationStartDate: '2025-02-01',
-                onshoreOffshore: 'Offshore',
-                location: 'New York'
-            };
-            populateFormData(employeeData);
-        }
+           <div class="form-group">
+               <label for="associateName">Associate Name:</label>
+               <input type="text" id="associateName" placeholder="Enter Associate Name" oninput="showSuggestions(this.value)" required>
+               <ul id="suggestions" class="suggestions"></ul>
+               <div class="error-message" id="associateNameError"></div>
+           </div>
+           <div class="form-group">
+               <label for="status">Status:</label>
+               <select id="status" required>
+                   <option value="">Select Status</option>
+                   <option value="Active">Active</option>
+                   <option value="UBL">UBL</option>
+               </select>
+               <div class="error-message" id="statusError"></div>
+           </div>
+           <div class="form-group">
+               <label for="projectId">Project ID:</label>
+               <input type="text" id="projectId" placeholder="Enter Project ID" required>
+               <div class="error-message" id="projectIdError"></div>
+           </div>
+           <div class="form-group">
+               <label for="projectName">Project Name:</label>
+               <input type="text" id="projectName" placeholder="Enter Project Name" required>
+               <div class="error-message" id="projectNameError"></div>
+           </div>
+           <div class="form-group">
+               <label for="allocationStartDate">Allocation Start Date:</label>
+               <input type="date" id="allocationStartDate" placeholder="Enter Allocation Start Date" required>
+               <div class="error-message" id="allocationStartDateError"></div>
+           </div>
+           <div class="form-group">
+               <label for="onshoreOffshore">Onshore/Offshore:</label>
+               <select id="onshoreOffshore" required>
+                   <option value="">Select Onshore/Offshore</option>
+                   <option value="Onshore">Onshore</option>
+                   <option value="Offshore">Offshore</option>
+               </select>
+               <div class="error-message" id="onshoreOffshoreError"></div>
+           </div>
+           <div class="form-group">
+               <label for="location">Location:</label>
+               <input type="text" id="location" placeholder="Enter Location" required>
+               <div class="error-message" id="locationError"></div>
+           </div>
+           <div class="form-group">
+               <label for="leaveDates">Leave Dates:</label>
+               <input type="text" id="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
+               <div class="error-message" id="leaveDatesError"></div>
+           </div>
+           <ul id="leaveDatesList" class="leave-dates-list"></ul>
+           <div class="form-group">
+               <label for="leaveType">Leave Type:</label>
+               <select id="leaveType" required>
+                   <option value="">Select Leave Type</option>
+                   <option value="PL">PL</option>
+                   <option value="BLD">BLD</option>
+               </select>
+               <div class="error-message" id="leaveTypeError"></div>
+           </div>
+       </div>
+       <div class="button-container">
+           <button id="submitBtn">Submit</button>
+       </div>
+       <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+       <script>
+           const MAX_LEAVES_PER_MONTH = 5; // Set the maximum number of leaves allowed per month
+           const LEAVE_COLORS = {
+               PL: { background: 'red', color: 'white' },
+               BLD: { background: 'darkgreen', color: 'white' }
+           };
+           const leaveDates = [];
+           let flatpickrInstance;
 
-        function populateFormData(data) {
-            document.getElementById("associateId").value = data.associateId;
-            document.getElementById("status").value = data.status;
-            document.getElementById("projectId").value = data.projectId;
-            document.getElementById("projectName").value = data.projectName;
-            document.getElementById("allocationStartDate").value = data.allocationStartDate;
-            document.getElementById("onshoreOffshore").value = data.onshoreOffshore;
-            document.getElementById("location").value = data.location;
-        }
+           document.getElementById("submitBtn").addEventListener("click", async () => {
+               if (await validateForm()) {
+                   const data = collectFormData();
+                   if (leaveDates.length > MAX_LEAVES_PER_MONTH) {
+                       alert(`You can only take up to ${MAX_LEAVES_PER_MONTH} leaves in a month.`);
+                       return;
+                   }
 
-        function updateLeaveDatesList() {
-            const leaveDatesList = document.getElementById("leaveDatesList");
-            leaveDatesList.innerHTML = '';
-            leaveDates.forEach(date => {
-                const li = document.createElement("li");
-                li.textContent = date;
-                const removeButton = document.createElement("button");
-                removeButton.textContent = "Remove";
-                removeButton.onclick = () => removeLeaveDate(date);
-                li.appendChild(removeButton);
-                leaveDatesList.appendChild(li);
-            });
-        }
+                   try {
+                       const response = await fetch('http://localhost:3000/submit', {
+                           method: 'POST',
+                           headers: {
+                               'Content-Type': 'application/json'
+                           },
+                           body: JSON.stringify(data)
+                       });
 
-        function removeLeaveDate(date) {
-            const index = leaveDates.indexOf(date);
-            if (index > -1) {
-                leaveDates.splice(index, 1);
-                updateLeaveDatesList();
-            }
-        }
+                       if (response.ok) {
+                           alert("Data submitted successfully!");
+                           clearForm();
+                       } else {
+                           throw new Error('Failed to store data');
+                       }
+                   } catch (error) {
+                       alert("Failed to store data. Please check the console.");
+                       console.error(error);
+                   }
+               } else {
+                   alert("Please correct the highlighted fields.");
+               }
+           });
 
-        async function validateForm() {
-            let isValid = true;
+           function showSuggestions(value) {
+               if (value.length === 0) {
+                   document.getElementById("suggestions").innerHTML = '';
+                   return;
+               }
 
-            // Validate Associate Name
-            const associateName = document.getElementById("associateName");
-            const associateNameError = document.getElementById("associateNameError");
-            if (!associateName.value) {
-                associateName.classList.add("invalid");
-                associateNameError.textContent = "Associate Name is required.";
-                isValid = false;
-            } else {
-                associateName.classList.remove("invalid");
-                associateNameError.textContent = "";
-            }
+               // Simulate fetching suggestions from Excel
+               const suggestions = ['John Doe', 'Jane Smith', 'Alice Johnson']; // Example suggestions
+               displaySuggestions(suggestions.filter(name => name.toLowerCase().includes(value.toLowerCase())));
+           }
 
-            // Validate Associate ID
-            const associateId = document.getElementById("associateId");
-            const associateIdError = document.getElementById("associateIdError");
-            if (!associateId.value) {
-                associateId.classList.add("invalid");
-                associateIdError.textContent = "Associate ID is required.";
-                isValid = false;
-            } else {
-                associateId.classList.remove("invalid");
-                associateIdError.textContent = "";
-            }
+           function displaySuggestions(suggestions) {
+               const suggestionsList = document.getElementById("suggestions");
+               suggestionsList.innerHTML = '';
+               suggestions.forEach(suggestion => {
+                   const li = document.createElement("li");
+                   li.textContent = suggestion;
+                   li.onclick = () => selectSuggestion(suggestion);
+                   suggestionsList.appendChild(li);
+               });
+           }
 
-            // Validate Status
-            const status = document.getElementById("status");
-            const statusError = document.getElementById("statusError");
-            if (!status.value) {
-                status.classList.add("invalid");
-                statusError.textContent = "Status is required.";
-                isValid = false;
-            } else {
-                status.classList.remove("invalid");
-                statusError.textContent = "";
-            }
+           function selectSuggestion(suggestion) {
+               document.getElementById("associateName").value = suggestion;
+               document.getElementById("suggestions").innerHTML = '';
+               fetchEmployeeData(suggestion);
+           }
 
-            // Validate Project ID
-            const projectId = document.getElementById("projectId");
-            const projectIdError = document.getElementById("projectIdError");
-            if (!projectId.value) {
-                projectId.classList.add("invalid");
-                projectIdError.textContent = "Project ID is required.";
-                isValid = false;
-            } else {
-                projectId.classList.remove("invalid");
-                projectIdError.textContent = "";
-            }
+           function fetchEmployeeData(associateName) {
+               // Simulate fetching employee data from Excel
+               const employeeData = {
+                   associateId: 'A123',
+                   status: 'Active',
+                   projectId: 'P456',
+                   projectName: 'Project Alpha',
+                   allocationStartDate: '2025-02-01',
+                   onshoreOffshore: 'Offshore',
+                   location: 'New York'
+               };
+               populateFormData(employeeData);
+           }
 
-            // Validate Project Name
-            const projectName = document.getElementById("projectName");
-            const projectNameError = document.getElementById("projectNameError");
-            if (!projectName.value) {
-                projectName.classList.add("invalid");
-                projectNameError.textContent = "Project Name is required.";
-                isValid = false;
-            } else {
-                projectName.classList.remove("invalid");
-                projectNameError.textContent = "";
-            }
+           function populateFormData(data) {
+               document.getElementById("associateId").value = data.associateId;
+               document.getElementById("status").value = data.status;
+               document.getElementById("projectId").value = data.projectId;
+               document.getElementById("projectName").value = data.projectName;
+               document.getElementById("allocationStartDate").value = data.allocationStartDate;
+               document.getElementById("onshoreOffshore").value = data.onshoreOffshore;
+               document.getElementById("location").value = data.location;
+           }
 
-            // Validate Allocation Start Date
-            const allocationStartDate = document.getElementById("allocationStartDate");
-            const allocationStartDateError = document.getElementById("allocationStartDateError");
-            if (!allocationStartDate.value) {
-                allocationStartDate.classList.add("invalid");
-                allocationStartDateError.textContent = "Allocation Start Date is required.";
-                isValid = false;
-            } else {
-                allocationStartDate.classList.remove("invalid");
-                allocationStartDateError.textContent = "";
-            }
+           function updateLeaveDatesList() {
+               const leaveDatesList = document.getElementById("leaveDatesList");
+               leaveDatesList.innerHTML = '';
+               leaveDates.forEach(date => {
+                   const li = document.createElement("li");
+                   li.textContent = date;
+                   const removeButton = document.createElement("button");
+                   removeButton.textContent = "Remove";
+                   removeButton.onclick = () => removeLeaveDate(date);
+                   li.appendChild(removeButton);
+                   leaveDatesList.appendChild(li);
+               });
+           }
 
-            // Validate Onshore/Offshore
-            const onshoreOffshore = document.getElementById("onshoreOffshore");
-            const onshoreOffshoreError = document.getElementById("onshoreOffshoreError");
-            if (!onshoreOffshore.value) {
-                onshoreOffshore.classList.add("invalid");
-                onshoreOffshoreError.textContent = "Onshore/Offshore is required.";
-                isValid = false;
-            } else {
-                onshoreOffshore.classList.remove("invalid");
-                onshoreOffshoreError.textContent = "";
-            }
+           function removeLeaveDate(date) {
+               const index = leaveDates.indexOf(date);
+               if (index > -1) {
+                   leaveDates.splice(index, 1);
+                   updateLeaveDatesList();
+               }
+           }
 
-            // Validate Location
-            const location = document.getElementById("location");
-            const locationError = document.getElementById("locationError");
-            if (!location.value) {
-                location.classList.add("invalid");
-                locationError.textContent = "Location is required.";
-                isValid = false;
-            } else {
-                location.classList.remove("invalid");
-                locationError.textContent = "";
-            }
+           async function validateForm() {
+               let isValid = true;
 
-            // Validate Leave Dates
-            const leaveDatesError = document.getElementById("leaveDatesError");
-            if (leaveDates.length === 0) {
-                leaveDatesError.textContent = "At least one leave date is required.";
-                isValid = false;
-            } else {
-                leaveDatesError.textContent = "";
-            }
+               // Validate Associate Name
+               const associateName = document.getElementById("associateName");
+               const associateNameError = document.getElementById("associateNameError");
+               if (!associateName.value) {
+                   associateName.classList.add("invalid");
+                   associateNameError.textContent = "Associate Name is required.";
+                   isValid = false;
+               } else {
+                   associateName.classList.remove("invalid");
+                   associateNameError.textContent = "";
+               }
 
-            // Validate Leave Type
-            const leaveType = document.getElementById("leaveType");
-            const leaveTypeError = document.getElementById("leaveTypeError");
-            if (!leaveType.value) {
-                leaveType.classList.add("invalid");
-                leaveTypeError.textContent = "Leave Type is required.";
-                isValid = false;
-            } else {
-                leaveType.classList.remove("invalid");
-                leaveTypeError.textContent = "";
-            }
-            return isValid;
-        }
+               // Validate Associate ID
+               const associateId = document.getElementById("associateId");
+               const associateIdError = document.getElementById("associateIdError");
+               if (!associateId.value) {
+                   associateId.classList.add("invalid");
+                   associateIdError.textContent = "Associate ID is required.";
+                   isValid = false;
+               } else {
+                   associateId.classList.remove("invalid");
+                   associateIdError.textContent = "";
+               }
 
-        function collectFormData() {
-            const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
-            const data = {};
-            fields.forEach(field => {
-                data[field] = document.getElementById(field).value;
-            });
-            data.leaveDates = leaveDates;
-            return data;
-        }
+               // Validate Status
+               const status = document.getElementById("status");
+               const statusError = document.getElementById("statusError");
+               if (!status.value) {
+                   status.classList.add("invalid");
+                   statusError.textContent = "Status is required.";
+                   isValid = false;
+               } else {
+                   status.classList.remove("invalid");
+                   statusError.textContent = "";
+               }
 
-        function clearForm() {
-            const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
-            fields.forEach(field => {
-                document.getElementById(field).value = '';
-                document.getElementById(field).classList.remove("invalid");
-                document.getElementById(`${field}Error`).textContent = '';
-            });
-            leaveDates.length = 0;
-            updateLeaveDatesList();
-            flatpickrInstance.clear(); // Clear the Flatpickr instance
-        }
-          // Initialize Flatpickr for multiple date selection with a limit of 5 dates
-          flatpickrInstance = flatpickr("#leaveDates", {
-            mode: "multiple",
-            dateFormat: "Y-m-d",
-            onChange: function (selectedDates, dateStr, instance) {
-                if (selectedDates.length > MAX_LEAVES_PER_MONTH) {
-                    alert(`You can only select up to ${MAX_LEAVES_PER_MONTH} leave dates.`);
-                    selectedDates.splice(MAX_LEAVES_PER_MONTH);
-                    instance.setDate(selectedDates);
-                }
-                leaveDates.length = 0;
-                selectedDates.forEach(date => {
-                    leaveDates.push(instance.formatDate(date, "Y-m-d"));
-                });
-                updateLeaveDatesList();
-            }
-        });
+               // Validate Project ID
+               const projectId = document.getElementById("projectId");
+               const projectIdError = document.getElementById("projectIdError");
+               if (!projectId.value) {
+                   projectId.classList.add("invalid");
+                   projectIdError.textContent = "Project ID is required.";
+                   isValid = false;
+               } else {
+                   projectId.classList.remove("invalid");
+                   projectIdError.textContent = "";
+               }
 
-        // Function to store data in Excel using Office Scripts
-        async function storeDataInExcel(data) {
-            await Excel.run(async (context) => {
-                const sheet = context.workbook.worksheets.getActiveWorksheet();
-                const table = sheet.tables.getItem("EmployeeTable");
+               // Validate Project Name
+               const projectName = document.getElementById("projectName");
+               const projectNameError = document.getElementById("projectNameError");
+               if (!projectName.value
 
-                // Get the current month and year
-                const currentDate = new Date();
-                const currentMonth = currentDate.toLocaleString('default', { month: 'short' });
-                const currentYear = currentDate.getFullYear();
+Edit in Pages
 
-                // Create the header row with dates and days
-                const headerRow = ['Date', ...Array.from({ length: 31 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${currentMonth}`)];
-                const dayRow = ['Day', ...Array.from({ length: 31 }, (_, i) => new Date(currentYear, currentDate.getMonth(), i + 1).toLocaleString('default', { weekday: 'short' }))];
 
-                // Create the attendance row with leave types
-                const attendanceRow = ['Attendance', ...Array.from({ length: 31 }, (_, i) => {
-                    const date = `${currentYear}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
-                    return leaveDates.includes(date) ? data.leaveType : 'BLD';
-                })];
 
-                // Add the rows to the table
-                table.rows.add(null, [headerRow, dayRow, attendanceRow]);
 
-                // Apply styles to the leave types
-                const range = table.getRange();
-                range.load("values, format/fill, format/font");
+AI-generated content may be incorrect
+You said:
 
-                await context.sync();
+Please continue with the code.
+Copilot said:
+Copilot
+Certainly! Let's continue with the rest of the HTML and JavaScript code:
 
-                range.values.forEach((row, rowIndex) => {
-                    if (rowIndex === 2) { // Attendance row
-                        row.forEach((cell, cellIndex) => {
-                            if (cell === 'PL') {
-                                range.getCell(rowIndex, cellIndex).format.fill.color = LEAVE_COLORS.PL.background;
-                                range.getCell(rowIndex, cellIndex).format.font.color = LEAVE_COLORS.PL.color;
-                            } else if (cell === 'BLD') {
-                                range.getCell(rowIndex, cellIndex).format.fill.color = LEAVE_COLORS.BLD.background;
-                                range.getCell(rowIndex, cellIndex).format.font.color = LEAVE_COLORS.BLD.color;
-                            }
-                        });
-                    }
-                });
+               // Validate Project Name
+               const projectName = document.getElementById("projectName");
+               const projectNameError = document.getElementById("projectNameError");
+               if (!projectName.value) {
+                   projectName.classList.add("invalid");
+                   projectNameError.textContent = "Project Name is required.";
+                   isValid = false;
+               } else {
+                   projectName.classList.remove("invalid");
+                   projectNameError.textContent = "";
+               }
 
-                await context.sync();
-                console.log("Data stored in Excel successfully.");
-            });
-        }
-    </script>
-</body>
-</html>
+               // Validate Allocation Start Date
+               const allocationStartDate = document.getElementById("allocationStartDate");
+               const allocationStartDateError = document.getElementById("allocationStartDateError");
+               if (!allocationStartDate.value) {
+                   allocationStartDate.classList.add("invalid");
+                   allocationStartDateError.textContent = "Allocation Start Date is required.";
+                   isValid = false;
+               } else {
+                   allocationStartDate.classList.remove("invalid");
+                   allocationStartDateError.textContent = "";
+               }
+
+               // Validate Onshore/Offshore
+               const onshoreOffshore = document.getElementById("onshoreOffshore");
+               const onshoreOffshoreError = document.getElementById("onshoreOffshoreError");
+               if (!onshoreOffshore.value) {
+                   onshoreOffshore.classList.add("invalid");
+                   onshoreOffshoreError.textContent = "Onshore/Offshore is required.";
+                   isValid = false;
+               } else {
+                   onshoreOffshore.classList.remove("invalid");
+                   onshoreOffshoreError.textContent = "";
+               }
+
+               // Validate Location
+               const location = document.getElementById("location");
+               const locationError = document.getElementById("locationError");
+               if (!location.value) {
+                   location.classList.add("invalid");
+                   locationError.textContent = "Location is required.";
+                   isValid = false;
+               } else {
+                   location.classList.remove("invalid");
+                   locationError.textContent = "";
+               }
+
+               // Validate Leave Dates
+               const leaveDatesError = document.getElementById("leaveDatesError");
+               if (leaveDates.length === 0) {
+                   leaveDatesError.textContent = "At least one leave date is required.";
+                   isValid = false;
+               } else {
+                   leaveDatesError.textContent = "";
+               }
+
+               // Validate Leave Type
+               const leaveType = document.getElementById("leaveType");
+               const leaveTypeError = document.getElementById("leaveTypeError");
+               if (!leaveType.value) {
+                   leaveType.classList.add("invalid");
+                   leaveTypeError.textContent = "Leave Type is required.";
+                   isValid = false;
+               } else {
+                   leaveType.classList.remove("invalid");
+                   leaveTypeError.textContent = "";
+               }
+               return isValid;
+           }
+
+           function collectFormData() {
+               const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
+               const data = {};
+               fields.forEach(field => {
+                   data[field] = document.getElementById(field).value;
+               });
+               data.leaveDates = leaveDates;
+               return data;
+           }
+
+           function clearForm() {
+               const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
+               fields.forEach(field => {
+                   document.getElementById(field).value = '';
+                   document.getElementById(field).classList.remove("invalid");
+                   document.getElementById(`${field}Error`).textContent = '';
+               });
+               leaveDates.length = 0;
+               updateLeaveDatesList();
+               flatpickrInstance.clear(); // Clear the Flatpickr instance
+           }
+
+           // Initialize Flatpickr for multiple date selection with a limit of 5 dates
+           flatpickrInstance = flatpickr("#leaveDates", {
+               mode: "multiple",
+               dateFormat: "Y-m-d",
+               onChange: function (selectedDates, dateStr, instance) {
+                   if (selectedDates.length > MAX_LEAVES_PER_MONTH) {
+                       alert(`You can only select up to ${MAX_LEAVES_PER_MONTH} leave dates.`);
+                       selectedDates.splice(MAX_LEAVES_PER_MONTH);
+                       instance.setDate(selectedDates);
+                   }
+                   leaveDates.length = 0;
+                   selectedDates.forEach(date => {
+                       leaveDates.push(instance.formatDate(date, "Y-m-d"));
+                   });
+                   updateLeaveDatesList();
+               }
+           });
+       </script>
+   </body>
+   </html>
+Node.js Server (server.js)
+const express = require('express');
+const ExcelJS = require('exceljs');
+const cors = require('cors');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+const port = 3000;
+
+app.use(cors());
+app.use(express.json());
+
+const excelFilePath = './attendance.xlsx';
+
+async function initializeExcel() {
+  const workbook = new ExcelJS.Workbook();
+  try {
+    await workbook.xlsx.readFile(excelFilePath);
+  } catch (error) {
+    const worksheet = workbook.addWorksheet('Attendance');
+    worksheet.columns = [
+      { header: 'Associate ID', key: 'associateId' },
+      { header: 'Associate Name', key: 'associateName' },
+      { header: 'Status', key: 'status' },
+      { header: 'Project ID', key: 'projectId' },
+      { header: 'Project Name', key: 'projectName' },
+      { header: 'Allocation Start Date', key: 'allocationStartDate' },
+      { header: 'Onshore/Offshore', key: 'onshoreOffshore' },
+      { header: 'Location', key: 'location' },
+      { header: 'Leave Date', key: 'leaveDate' },
+      { header: 'Leave Type', key: 'leaveType' }
+    ];
+    await workbook.xlsx.writeFile(excelFilePath);
+  }
+}
+
+initializeExcel();
+
+app.post('/submit', async (req, res) => {
+  try {
+    const data = req.body;
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(excelFilePath);
+    const worksheet = workbook.getWorksheet('Attendance');
+
+    data.leaveDates.forEach(leaveDate => {
+      worksheet.addRow({
+        associateId: data.associateId,
+        associateName: data.associateName,
+        status: data.status,
+        projectId: data.projectId,
+        projectName: data.projectName,
+        allocationStartDate: data.allocationStartDate,
+        onshoreOffshore: data.onshoreOffshore,
+        location: data.location,
+        leaveDate: leaveDate,
+        leaveType: data.leaveType
+      });
+    });
+
+    await workbook.xlsx.writeFile(excelFilePath);
+    io.emit('dataUpdated', data); // Emit an event to notify clients of data update
+    res.status(200).send('Data stored successfully');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error storing data');
+  }
+});
+
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+Install Dependencies
+In your project directory, install the necessary dependencies:
+
+npm install express exceljs cors socket.io
+Run the Server
+Start the Node.js server:
+
+node server.js
+Summary
+Backend Integration:
+
+Created a Node.js/Express server to handle form submissions.
+Used ExcelJS to read/write Excel files.
+Data is stored in a structured format with one row per leave date.
+Used Socket.io for real-time updates.
+Frontend Integration:
+
+Created a dynamic UI using HTML and JavaScript.
+Used Flatpickr for date selection.
+Communicated with the backend in real-time using Socket.io.
+Automation:
+
+No manual intervention needed after form submission.
+Excel file is automatically created if it doesn't exist.
+Data is appended to the existing Excel file.
+Real-time updates ensure the UI is always live.
