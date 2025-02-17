@@ -1,76 +1,117 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const ExcelJS = require('exceljs');
-const path = require('path');
-const fs = require('fs');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h2>Attendance Management Form</h2>
+    <div class="form-container">
+        <!-- Keep all your existing form groups here -->
+        <!-- ... (same form structure as in your original code) ... -->
+    </div>
+    <div class="button-container">
+        <button id="submitBtn">Submit</button>
+    </div>
+    <table id="liveTable">
+        <!-- Keep your existing table structure here -->
+    </table>
 
-const app = express();
-const port = 3000;
-
-// Create Excel file if not exists
-const excelFilePath = path.join(__dirname, 'attendance.xlsx');
-
-async function initializeExcel() {
-    if (!fs.existsSync(excelFilePath)) {
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Attendance');
-        worksheet.columns = [
-            { header: 'ID', key: 'id' },
-            { header: 'Timestamp', key: 'timestamp' },
-            { header: 'Associate ID', key: 'associateId' },
-            { header: 'Associate Name', key: 'associateName' },
-            { header: 'Status', key: 'status' },
-            { header: 'Project ID', key: 'projectId' },
-            { header: 'Project Name', key: 'projectName' },
-            { header: 'Allocation Start Date', key: 'allocationStartDate' },
-            { header: 'Onshore/Offshore', key: 'onshoreOffshore' },
-            { header: 'Location', key: 'location' },
-            { header: 'Leave Dates', key: 'leaveDates' },
-            { header: 'Leave Type', key: 'leaveType' }
-        ];
-        await workbook.xlsx.writeFile(excelFilePath);
-    }
-}
-
-initializeExcel().catch(console.error);
-
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.post('/submit', async (req, res) => {
-    try {
-        const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.readFile(excelFilePath);
-        const worksheet = workbook.getWorksheet('Attendance');
-
-        // Check for existing associate ID
-        const existingRow = worksheet.getRows(1, worksheet.rowCount).find(row => 
-            row.getCell('associateId').value === req.body.associateId
-        );
-
-        if (existingRow) {
-            return res.status(400).json({ 
-                error: `Associate ID ${req.body.associateId} already exists!` 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            flatpickr("#leaveDates", {
+                mode: "multiple",
+                dateFormat: "Y-m-d",
             });
-        }
 
-        // Add new entry
-        const newRow = {
-            id: worksheet.rowCount, // Auto-increment ID
-            timestamp: new Date().toISOString(),
-            ...req.body
-        };
+            document.getElementById('submitBtn').addEventListener('click', function (e) {
+                e.preventDefault();
+                if (validateForm()) {
+                    submitFormData();
+                }
+            });
 
-        worksheet.addRow(newRow);
-        await workbook.xlsx.writeFile(excelFilePath);
+            function validateForm() {
+                let isValid = true;
+                const fields = ['associateId', 'associateName', 'status', 'projectId', 
+                             'projectName', 'allocationStartDate', 'onshoreOffshore', 
+                             'location', 'leaveDates', 'leaveType'];
 
-        res.json({ message: 'Data saved successfully!' });
-    } catch (error) {
-        console.error('Server error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+                fields.forEach(field => {
+                    const input = document.getElementById(field);
+                    if (!input.value.trim()) {
+                        document.getElementById(field + 'Error').textContent = 'This field is required';
+                        isValid = false;
+                    } else {
+                        document.getElementById(field + 'Error').textContent = '';
+                    }
+                });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
+                return isValid;
+            }
+
+            async function submitFormData() {
+                const formData = {
+                    associateId: document.getElementById('associateId').value,
+                    associateName: document.getElementById('associateName').value,
+                    status: document.getElementById('status').value,
+                    projectId: document.getElementById('projectId').value,
+                    projectName: document.getElementById('projectName').value,
+                    allocationStartDate: document.getElementById('allocationStartDate').value,
+                    onshoreOffshore: document.getElementById('onshoreOffshore').value,
+                    location: document.getElementById('location').value,
+                    leaveDates: document.getElementById('leaveDates').value,
+                    leaveType: document.getElementById('leaveType').value
+                };
+
+                try {
+                    const response = await fetch('/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert('Data saved successfully!');
+                        addRowToTable(formData);
+                        document.querySelector('.form-container').reset();
+                    } else {
+                        alert(`Error: ${result.error}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while saving data');
+                }
+            }
+
+            function addRowToTable(data) {
+                const table = document.getElementById('liveTable').getElementsByTagName('tbody')[0];
+                const row = table.insertRow();
+                const timestamp = new Date().toLocaleString();
+
+                row.innerHTML = `
+                    <td>${table.rows.length + 1}</td>
+                    <td>${timestamp}</td>
+                    <td>${data.associateId}</td>
+                    <td>${data.associateName}</td>
+                    <td>${data.status}</td>
+                    <td>${data.projectId}</td>
+                    <td>${data.projectName}</td>
+                    <td>${data.allocationStartDate}</td>
+                    <td>${data.onshoreOffshore}</td>
+                    <td>${data.location}</td>
+                    <td>${data.leaveDates}</td>
+                    <td class="${data.leaveType.toLowerCase()}">${data.leaveType}</td>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
