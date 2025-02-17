@@ -1,163 +1,603 @@
-const fs = require("fs");
-const path = require("path");
-const oracledb = require("oracledb");
-
-const db_connect = {
-  user: 'system',
-  password: 'root',
-  connectString: 'localhost:1521/XE'
-};
-
-async function queryTestDb(query) {
-  let connection;
-  try {
-    console.log("Establishing database connection...");
-    connection = await oracledb.getConnection(db_connect);
-    console.log("Database connection established.");
-
-    console.log("Executing query:", query);
-    const result = await connection.execute(query);
-    
-    // Extract column names and data
-    const columns = result.metaData.map(col => col.name);
-    const data = result.rows;
-
-    return { columns, data };
-  } catch (err) {
-    console.error("Error executing query:", err);
-    throw err;
-  } finally {
-    if (connection) {
-      try {
-        await connection.close();
-        console.log("Database connection closed.");
-      } catch (err) {
-        console.error("Error closing connection:", err);
-      }
-    }
-  }
-}
-
-async function runSqlFile(filePath) {
-  try {
-    console.log("Running runSqlFile task...");
-    const queries = fs.readFileSync(path.resolve(filePath), "utf8").split(';');
-    let results = [];
-    for (let query of queries) {
-      if (query.trim()) {
-        console.log("Executing query from file:", query);
-        results.push(await queryTestDb(query));
-      }
-    }
-    return results;
-  } catch (err) {
-    console.error("Error in runSqlFile task:", err);
-    throw err;
-  }
-}
-
-async function writeToFile(filePath, data) {
-  return new Promise((resolve, reject) => {
-    fs.writeFile(filePath, data, 'utf8', (err) => {
-      if (err) reject(err);
-      else resolve('Data written to file');
-    });
-  });
-}
-
-async function generateHtmlReport(data) {
-  let htmlContent = '<html><body><table border="1">';
-
-  // Add table headers
-  htmlContent += '<tr>';
-  data[0].columns.forEach(col => {
-    htmlContent += `<th>${col}</th>`;
-  });
-  htmlContent += '</tr>';
-
-  // Add table rows
-  data[0].data.forEach(row => {
-    let rowHtml = '<tr>';
-    let containsFail = false;
-    row.forEach(cell => {
-      if (typeof cell === 'string' && cell.toLowerCase().includes('fail')) {
-        containsFail = true;
-      }
-      rowHtml += `<td>${cell}</td>`;
-    });
-    rowHtml += '</tr>';
-    if (containsFail) {
-      rowHtml = rowHtml.replace('<tr>', '<tr style="background-color: #FF4747;">');
-    }
-    htmlContent += rowHtml;
-  });
-
-  htmlContent += '</table></body></html>';
-  return htmlContent;
-}
-
-module.exports = {
-  e2e: {
-    setupNodeEvents(on, config) {
-      on("task", {
-        queryDb: async (query) => {
-          try {
-            console.log("Running queryDb task...");
-            return await queryTestDb(query);
-          } catch (err) {
-            console.error("Error in queryDb task:", err);
-            throw err;
-          }
-        },
-        runSqlFile: async (filePath) => {
-          try {
-            console.log("Running runSqlFile task...");
-            return await runSqlFile(filePath);
-          } catch (err) {
-            console.error("Error in runSqlFile task:", err);
-            throw err;
-          }
-        },
-        writeToFile: async ({ filePath, data }) => {
-          try {
-            console.log("Running writeToFile task...");
-            return await writeToFile(filePath, data);
-          } catch (err) {
-            console.error("Error in writeToFile task:", err);
-            throw err;
-          }
-        },
-        generateHtmlReport: async (filePath) => {
-          try {
-            console.log("Generating HTML report...");
-            const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            const htmlContent = await generateHtmlReport(data);
-            const outputFilePath = 'C:/Users/2308397/CronJobsCypress/report.html';
-            await writeToFile(outputFilePath, htmlContent);
-            return 'HTML report generated';
-          } catch (err) {
-            console.error("Error generating HTML report:", err);
-            throw err;
-          }
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: #F4E4F1;
+            color: #333;
         }
-      });
-    },
-  },
-};
 
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 1200px;
+            margin: auto;
+            background: #D08CC5;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
 
-describe('Database Testing', () => {
-  it('Run SQL file and store data in HTML report', () => {
-    const filePath = 'C:/Users/2308397/CronJobsCypress/BatchValid.sql';
-    const outputFilePath = 'C:/Users/2308397/CronJobsCypress/output.txt';
-    cy.task('runSqlFile', filePath).then(result => {
-      const dataToWrite = JSON.stringify(result, null, 2);
-      cy.task('writeToFile', { filePath: outputFilePath, data: dataToWrite }).then(writeResult => {
-        console.log(writeResult);
-        cy.task('generateHtmlReport', outputFilePath).then(reportResult => {
-          console.log(reportResult);
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            padding: 8px;
+            border: 2px solid #ed97de;
+            border-radius: 5px;
+            font-size: 12px;
+            background: #f9f9f9;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .invalid {
+            border-color: red;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .button-container {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .button-container button:hover {
+            background: #2980b9;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        ul li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ed97de;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        ul li button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        ul li button:hover {
+            background: #c0392b;
+        }
+
+        .suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .suggestions li {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .suggestions li:hover {
+            background: #f0f0f0;
+        }
+
+        .leave-dates-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .leave-dates-list li {
+            flex: 1 1 calc(33.333% - 10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ed97de;
+            border-radius: 5px;
+        }
+
+        .leave-dates-list li button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .leave-dates-list li button:hover {
+            background: #c0392b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .pl {
+            background-color: red;
+            color: white;
+        }
+
+        .bld {
+            background-color: darkgreen;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h2>Attendance Management Form</h2>
+    <div class="form-container">
+        <div class="form-group">
+            <label for="associateId">Associate ID:</label>
+            <input type="text" id="associateId" placeholder="Enter Associate ID" required>
+            <div class="error-message" id="associateIdError"></div>
+        </div>
+        <div class="form-group">
+            <label for="associateName">Associate Name:</label>
+            <input type="text" id="associateName" placeholder="Enter Associate Name" oninput="showSuggestions(this.value)" required>
+            <ul id="suggestions" class="suggestions"></ul>
+            <div class="error-message" id="associateNameError"></div>
+        </div>
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" required>
+                <option value="">Select Status</option>
+                <option value="Active">Active</option>
+                <option value="UBL">UBL</option>
+            </select>
+            <div class="error-message" id="statusError"></div>
+        </div>
+        <div class="form-group">
+            <label for="projectId">Project ID:</label>
+            <input type="text" id="projectId" placeholder="Enter Project ID" required>
+            <div class="error-message" id="projectIdError"></div>
+        </div>
+        <div class="form-group">
+            <label for="projectName">Project Name:</label>
+            <input type="text" id="projectName" placeholder="Enter Project Name" required>
+            <div class="error-message" id="projectNameError"></div>
+        </div>
+        <div class="form-group">
+            <label for="allocationStartDate">Allocation Start Date:</label>
+            <input type="date" id="allocationStartDate" placeholder="Enter Allocation Start Date" required>
+            <div class="error-message" id="allocationStartDateError"></div>
+        </div>
+        <div class="form-group">
+            <label for="onshoreOffshore">Onshore/Offshore:</label>
+            <select id="onshoreOffshore" required>
+                <option value="">Select Onshore/Offshore</option>
+                <option value="Onshore">Onshore</option>
+                <option value="Offshore">Offshore</option>
+            </select>
+            <div class="error-message" id="onshoreOffshoreError"></div>
+        </div>
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <input type="text" id="location" placeholder="Enter Location" required>
+            <div class="error-message" id="locationError"></div>
+        </div>
+        <div class="form-group">
+            <label for="leaveDates">Leave Dates:</label>
+            <input type="text" id="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
+            <div class="error-message" id="leaveDatesError"></div>
+        </div>
+        <ul id="leaveDatesList" class="leave-dates-list"></ul>
+        <div class="form-group">
+            <label for="leaveType">Leave Type:</label>
+            <select id="leaveType" required>
+                <option value="">Select Leave Type</option>
+                <option value="PL">PL</option>
+                <option value="BLD">BLD</option>
+            </select>
+            <div class="error-message" id="leaveTypeError"></div>
+        </div>
+    </div>
+    <div class="button-container">
+        <button id="submitBtn">Submit</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        const MAX_LEAVES_PER_MONTH = 5; // Set the maximum number of leaves allowed per month
+        const LEAVE_COLORS = {
+            PL: { background: 'red', color: 'white' },
+            BLD: { background: 'darkgreen', color: 'white' }
+        };
+        const leaveDates = [];
+        let flatpickrInstance;
+
+        document.getElementById("submitBtn").addEventListener("click", async () => {
+            if (await validateForm()) {
+                const data = collectFormData();
+                if (leaveDates.length > MAX_LEAVES_PER_MONTH) {
+                    alert(`You can only take up to ${MAX_LEAVES_PER_MONTH} leaves in a month.`);
+                } else {
+                    try {
+                        await sendToPowerAutomate(data);
+                        alert("Data submitted successfully!");
+                        clearForm();
+                    } catch (error) {
+                        alert("Failed to store data in Excel.");
+                    }
+                }
+            } else {
+                alert("Please correct the highlighted fields.");
+            }
         });
-      });
-    });
-  });
-});
+
+        async function sendToPowerAutomate(data) {
+            const response = await fetch('YOUR_POWER_AUTOMATE_FLOW_URL', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                throw new Error('Failed to send data to Power Automate');
+            }
+        }
+
+        function showSuggestions(value) {
+            if (value.length === 0) {
+                document.getElementById("suggestions").innerHTML = '';
+                return;
+            }
+
+            // Simulate fetching suggestions from Excel
+            const suggestions = ['John Doe', 'Jane Smith', 'Alice Johnson']; // Example suggestions
+            displaySuggestions(suggestions.filter(name => name.toLowerCase().includes(value.toLowerCase())));
+        }
+
+        function displaySuggestions(suggestions) {
+            const suggestionsList = document.getElementById("suggestions");
+            suggestionsList.innerHTML = '';
+            suggestions.forEach(suggestion => {
+                const li = document.createElement("li");
+                li.textContent = suggestion;
+                li.onclick = () => selectSuggestion(suggestion);
+                suggestionsList.appendChild(li);
+            });
+        }
+
+        function selectSuggestion(suggestion) {
+            document.getElementById("associateName").value = suggestion;
+            document.getElementById("suggestions").innerHTML = '';
+            fetchEmployeeData(suggestion);
+        }
+
+        function fetchEmployeeData(associateName) {
+            // Simulate fetching employee data from Excel
+            const employeeData = {
+                associateId: 'A123',
+                status: 'Active',
+                projectId: 'P456',
+                projectName: 'Project Alpha',
+                allocationStartDate: '2025-02-01',
+                onshoreOffshore: 'Offshore',
+                location: 'New York'
+            };
+            populateFormData(employeeData);
+        }
+
+        function populateFormData(data) {
+            document.getElementById("associateId").value = data.associateId;
+            document.getElementById("status").value = data.status;
+            document.getElementById("projectId").value = data.projectId;
+            document.getElementById("projectName").value = data.projectName;
+            document.getElementById("allocationStartDate").value = data.allocationStartDate;
+            document.getElementById("onshoreOffshore").value = data.onshoreOffshore;
+            document.getElementById("location").value = data.location;
+        }
+
+        function updateLeaveDatesList() {
+            const leaveDatesList = document.getElementById("leaveDatesList");
+            leaveDatesList.innerHTML = '';
+            leaveDates.forEach(date => {
+                const li = document.createElement("li");
+                li.textContent = date;
+                const removeButton = document.createElement("button");
+                removeButton.textContent = "Remove";
+                removeButton.onclick = () => removeLeaveDate(date);
+                li.appendChild(removeButton);
+                leaveDatesList.appendChild(li);
+            });
+        }
+
+        function removeLeaveDate(date) {
+            const index = leaveDates.indexOf(date);
+            if (index > -1) {
+                leaveDates.splice(index, 1);
+                updateLeaveDatesList();
+            }
+        }
+
+        async function validateForm() {
+            let isValid = true;
+
+            // Validate Associate Name
+            const associateName = document.getElementById("associateName");
+            const associateNameError = document.getElementById("associateNameError");
+            if (!associateName.value) {
+                associateName.classList.add("invalid");
+                associateNameError.textContent = "Associate Name is required.";
+                isValid = false;
+            } else {
+                associateName.classList.remove("invalid");
+                associateNameError.textContent = "";
+            }
+
+            // Validate Associate ID
+            const associateId = document.getElementById("associateId");
+            const associateIdError = document.getElementById("associateIdError");
+            if (!associateId.value) {
+                associateId.classList.add("invalid");
+                associateIdError.textContent = "Associate ID is required.";
+                isValid = false;
+            } else {
+                associateId.classList.remove("invalid");
+                associateIdError.textContent = "";
+            }
+
+            // Validate Status
+            const status = document.getElementById("status");
+            const statusError = document.getElementById("statusError");
+            if (!status.value) {
+                status.classList.add("invalid");
+                statusError.textContent = "Status is required.";
+                isValid = false;
+            } else {
+                status.classList.remove("invalid");
+                statusError.textContent = "";
+            }
+
+            // Validate Project ID
+            const projectId = document.getElementById("projectId");
+            const projectIdError = document.getElementById("projectIdError");
+            if (!projectId.value) {
+                projectId.classList.add("invalid");
+                projectIdError.textContent = "Project ID is required.";
+                isValid = false;
+            } else {
+                projectId.classList.remove("invalid");
+                projectIdError.textContent = "";
+            }
+
+            // Validate Project Name
+            const projectName = document.getElementById("projectName");
+            const projectNameError = document.getElementById("projectNameError");
+            if (!projectName.value) {
+                projectName.classList.add("invalid");
+                projectNameError.textContent = "Project Name is required.";
+                isValid = false;
+            } else {
+                projectName.classList.remove("invalid");
+                projectNameError.textContent = "";
+            }
+
+            // Validate Allocation Start Date
+            const allocationStartDate = document.getElementById("allocationStartDate");
+            const allocationStartDateError = document.getElementById("allocationStartDateError");
+            if (!allocationStartDate.value) {
+                allocationStartDate.classList.add("invalid");
+                allocationStartDateError.textContent = "Allocation Start Date is required.";
+                isValid = false;
+            } else {
+                allocationStartDate.classList.remove("invalid");
+                allocationStartDateError.textContent = "";
+            }
+
+            // Validate Onshore/Offshore
+            const onshoreOffshore = document.getElementById("onshoreOffshore");
+            const onshoreOffshoreError = document.getElementById("onshoreOffshoreError");
+            if (!onshoreOffshore.value) {
+                onshoreOffshore.classList.add("invalid");
+                onshoreOffshoreError.textContent = "Onshore/Offshore is required.";
+                isValid = false;
+            } else {
+                onshoreOffshore.classList.remove("invalid");
+                onshoreOffshoreError.textContent = "";
+            }
+
+            // Validate Location
+            const location = document.getElementById("location");
+            const locationError = document.getElementById("locationError");
+            if (!location.value) {
+                location.classList.add("invalid");
+                locationError.textContent = "Location is required.";
+                isValid = false;
+            } else {
+                location.classList.remove("invalid");
+                locationError.textContent = "";
+            }
+
+            // Validate Leave Dates
+            const leaveDatesError = document.getElementById("leaveDatesError");
+            if (leaveDates.length === 0) {
+                leaveDatesError.textContent = "At least one leave date is required.";
+                isValid = false;
+            } else {
+                leaveDatesError.textContent = "";
+            }
+
+            // Validate Leave Type
+            const leaveType = document.getElementById("leaveType");
+            const leaveTypeError = document.getElementById("leaveTypeError");
+            if (!leaveType.value) {
+                leaveType.classList.add("invalid");
+                leaveTypeError.textContent = "Leave Type is required.";
+                isValid = false;
+            } else {
+                leaveType.classList.remove("invalid");
+                leaveTypeError.textContent = "";
+            }
+            return isValid;
+        }
+
+        function collectFormData() {
+            const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
+            const data = {};
+            fields.forEach(field => {
+                data[field] = document.getElementById(field).value;
+            });
+            data.leaveDates = leaveDates;
+            return data;
+        }
+
+        function clearForm() {
+            const fields = ['associateId', 'associateName', 'status', 'projectId', 'projectName', 'allocationStartDate', 'onshoreOffshore', 'location', 'leaveType'];
+            fields.forEach(field => {
+                document.getElementById(field).value = '';
+                document.getElementById(field).classList.remove("invalid");
+                document.getElementById(`${field}Error`).textContent = '';
+            });
+            leaveDates.length = 0;
+            updateLeaveDatesList();
+            flatpickrInstance.clear(); // Clear the Flatpickr instance
+        }
+          // Initialize Flatpickr for multiple date selection with a limit of 5 dates
+          flatpickrInstance = flatpickr("#leaveDates", {
+            mode: "multiple",
+            dateFormat: "Y-m-d",
+            onChange: function (selectedDates, dateStr, instance) {
+                if (selectedDates.length > MAX_LEAVES_PER_MONTH) {
+                    alert(`You can only select up to ${MAX_LEAVES_PER_MONTH} leave dates.`);
+                    selectedDates.splice(MAX_LEAVES_PER_MONTH);
+                    instance.setDate(selectedDates);
+                }
+                leaveDates.length = 0;
+                selectedDates.forEach(date => {
+                    leaveDates.push(instance.formatDate(date, "Y-m-d"));
+                });
+                updateLeaveDatesList();
+            }
+        });
+
+        // Function to store data in Excel using Office Scripts
+        async function storeDataInExcel(data) {
+            await Excel.run(async (context) => {
+                const sheet = context.workbook.worksheets.getActiveWorksheet();
+                const table = sheet.tables.getItem("EmployeeTable");
+
+                // Get the current month and year
+                const currentDate = new Date();
+                const currentMonth = currentDate.toLocaleString('default', { month: 'short' });
+                const currentYear = currentDate.getFullYear();
+
+                // Create the header row with dates and days
+                const headerRow = ['Date', ...Array.from({ length: 31 }, (_, i) => `${String(i + 1).padStart(2, '0')}-${currentMonth}`)];
+                const dayRow = ['Day', ...Array.from({ length: 31 }, (_, i) => new Date(currentYear, currentDate.getMonth(), i + 1).toLocaleString('default', { weekday: 'short' }))];
+
+                // Create the attendance row with leave types
+                const attendanceRow = ['Attendance', ...Array.from({ length: 31 }, (_, i) => {
+                    const date = `${currentYear}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+                    return leaveDates.includes(date) ? data.leaveType : 'BLD';
+                })];
+
+                // Add the rows to the table
+                table.rows.add(null, [headerRow, dayRow, attendanceRow]);
+
+                // Apply styles to the leave types
+                const range = table.getRange();
+                range.load("values, format/fill, format/font");
+
+                await context.sync();
+
+                range.values.forEach((row, rowIndex) => {
+                    if (rowIndex === 2) { // Attendance row
+                        row.forEach((cell, cellIndex) => {
+                            if (cell === 'PL') {
+                                range.getCell(rowIndex, cellIndex).format.fill.color = LEAVE_COLORS.PL.background;
+                                range.getCell(rowIndex, cellIndex).format.font.color = LEAVE_COLORS.PL.color;
+                            } else if (cell === 'BLD') {
+                                range.getCell(rowIndex, cellIndex).format.fill.color = LEAVE_COLORS.BLD.background;
+                                range.getCell(rowIndex, cellIndex).format.font.color = LEAVE_COLORS.BLD.color;
+                            }
+                        });
+                    }
+                });
+
+                await context.sync();
+                console.log("Data stored in Excel successfully.");
+            });
+        }
+    </script>
+</body>
+</html>
