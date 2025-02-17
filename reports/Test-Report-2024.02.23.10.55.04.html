@@ -1,3 +1,85 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const ExcelJS = require('exceljs');
+const path = require('path');
+
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.post('/submit', async (req, res) => {
+    const {
+        associateId,
+        associateName,
+        status,
+        projectId,
+        projectName,
+        allocationStartDate,
+        onshoreOffshore,
+        location,
+        leaveDates,
+        leaveType
+    } = req.body;
+
+    // Log the received data for debugging
+    console.log('Received data:', req.body);
+
+    // Check for missing required fields
+    const missingFields = [];
+    if (!associateId) missingFields.push('associateId');
+    if (!associateName) missingFields.push('associateName');
+    if (!status) missingFields.push('status');
+    if (!projectId) missingFields.push('projectId');
+    if (!projectName) missingFields.push('projectName');
+    if (!allocationStartDate) missingFields.push('allocationStartDate');
+    if (!onshoreOffshore) missingFields.push('onshoreOffshore');
+    if (!location) missingFields.push('location');
+    if (!leaveDates) missingFields.push('leaveDates');
+    if (!leaveType) missingFields.push('leaveType');
+
+    if (missingFields.length > 0) {
+        console.log('Missing fields:', missingFields);
+        return res.status(400).json({ error: "Missing required fields", missingFields });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const filePath = 'C:/Users/2308397/PilotProject-Ally/PilotProject-Ally.xlsx';
+
+    try {
+        await workbook.xlsx.readFile(filePath);
+    } catch (error) {
+        workbook.addWorksheet('Attendance');
+    }
+
+    const worksheet = workbook.getWorksheet('Attendance');
+
+    const newRow = {
+        timestamp: new Date().toISOString(),
+        associateId,
+        associateName,
+        status,
+        projectId,
+        projectName,
+        allocationStartDate,
+        onshoreOffshore,
+        location,
+        leaveDates,
+        leaveType
+    };
+
+    worksheet.addRow(newRow);
+
+    await workbook.xlsx.writeFile(filePath);
+
+    res.send('Data saved successfully!');
+});
+
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -205,76 +287,78 @@
 </head>
 <body>
     <h2>Attendance Management Form</h2>
-    <div class="form-container">
-        <div class="form-group">
-            <label for="associateId">Associate ID:</label>
-            <input type="number" id="associateId" placeholder="Enter Associate ID" required>
-            <ul id="idSuggestions" class="suggestions"></ul>
-            <div class="error-message" id="associateIdError"></div>
+    <form action="/submit" method="post">
+        <div class="form-container">
+            <div class="form-group">
+                <label for="associateId">Associate ID:</label>
+                <input type="number" id="associateId" name="associateId" placeholder="Enter Associate ID" required>
+                <ul id="idSuggestions" class="suggestions"></ul>
+                <div class="error-message" id="associateIdError"></div>
+            </div>
+            <div class="form-group">
+                <label for="associateName">Associate Name:</label>
+                <input type="text" id="associateName" name="associateName" placeholder="Enter Associate Name" required>
+                <ul id="nameSuggestions" class="suggestions"></ul>
+                <div class="error-message" id="associateNameError"></div>
+            </div>
+            <div class="form-group">
+                <label for="status">Status:</label>
+                <select id="status" name="status" required>
+                    <option value="">Select Status</option>
+                    <option value="Active">Active</option>
+                    <option value="UBL">UBL</option>
+                </select>
+                <div class="error-message" id="statusError"></div>
+            </div>
+            <div class="form-group">
+                <label for="projectId">Project ID:</label>
+                <input type="number" id="projectId" name="projectId" placeholder="Enter Project ID" required>
+                <div class="error-message" id="projectIdError"></div>
+            </div>
+            <div class="form-group">
+                <label for="projectName">Project Name:</label>
+                <input type="text" id="projectName" name="projectName" placeholder="Enter Project Name" required>
+                <div class="error-message" id="projectNameError"></div>
+            </div>
+            <div class="form-group">
+                <label for="allocationStartDate">Allocation Start Date:</label>
+                <input type="date" id="allocationStartDate" name="allocationStartDate" required>
+                <div class="error-message" id="allocationStartDateError"></div>
+            </div>
+            <div class="form-group">
+                <label for="onshoreOffshore">Onshore/Offshore:</label>
+                <select id="onshoreOffshore" name="onshoreOffshore" required>
+                    <option value="">Select Onshore/Offshore</option>
+                    <option value="Onshore">Onshore</option>
+                    <option value="Offshore">Offshore</option>
+                </select>
+                <div class="error-message" id="onshoreOffshoreError"></div>
+            </div>
+            <div class="form-group">
+                <label for="location">Location:</label>
+                <input type="text" id="location" name="location" placeholder="Enter Location" required>
+                <div class="error-message" id="locationError"></div>
+            </div>
+            <div class="form-group">
+                <label for="leaveDates">Leave Dates:</label>
+                <input type="text" id="leaveDates" name="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
+                <div class="error-message" id="leaveDatesError"></div>
+            </div>
+            <ul id="leaveDatesList" class="leave-dates-list"></ul>
+            <div class="form-group">
+                <label for="leaveType">Leave Type:</label>
+                <select id="leaveType" name="leaveType" required>
+                    <option value="">Select Leave Type</option>
+                    <option value="PL">PL</option>
+                    <option value="BLD">BLD</option>
+                </select>
+                <div class="error-message" id="leaveTypeError"></div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="associateName">Associate Name:</label>
-            <input type="text" id="associateName" placeholder="Enter Associate Name" required>
-            <ul id="nameSuggestions" class="suggestions"></ul>
-            <div class="error-message" id="associateNameError"></div>
+        <div class="button-container">
+            <button type="submit" id="submitBtn"></button>
         </div>
-        <div class="form-group">
-            <label for="status">Status:</label>
-            <select id="status" required>
-                <option value="">Select Status</option>
-                <option value="Active">Active</option>
-                <option value="UBL">UBL</option>
-            </select>
-            <div class="error-message" id="statusError"></div>
-        </div>
-        <div class="form-group">
-            <label for="projectId">Project ID:</label>
-            <input type="number" id="projectId" placeholder="Enter Project ID" required>
-            <div class="error-message" id="projectIdError"></div>
-        </div>
-        <div class="form-group">
-            <label for="projectName">Project Name:</label>
-            <input type="text" id="projectName" placeholder="Enter Project Name" required>
-            <div class="error-message" id="projectNameError"></div>
-        </div>
-        <div class="form-group">
-            <label for="allocationStartDate">Allocation Start Date:</label>
-            <input type="date" id="allocationStartDate" required>
-            <div class="error-message" id="allocationStartDateError"></div>
-        </div>
-        <div class="form-group">
-            <label for="onshoreOffshore">Onshore/Offshore:</label>
-            <select id="onshoreOffshore" required>
-                <option value="">Select Onshore/Offshore</option>
-                <option value="Onshore">Onshore</option>
-                <option value="Offshore">Offshore</option>
-            </select>
-            <div class="error-message" id="onshoreOffshoreError"></div>
-        </div>
-        <div class="form-group">
-            <label for="location">Location:</label>
-            <input type="text" id="location" placeholder="Enter Location" required>
-            <div class="error-message" id="locationError"></div>
-        </div>
-        <div class="form-group">
-            <label for="leaveDates">Leave Dates:</label>
-            <input type="text" id="leaveDates" placeholder="Enter Leave Dates (comma-separated)" required>
-            <div class="error-message" id="leaveDatesError"></div>
-        </div>
-        <ul id="leaveDatesList" class="leave-dates-list"></ul>
-        <div class="form-group">
-            <label for="leaveType">Leave Type:</label>
-            <select id="leaveType" required>
-                <option value="">Select Leave Type</option>
-                <option value="PL">PL</option>
-                <option value="BLD">BLD</option>
-            </select>
-            <div class="error-message" id="leaveTypeError"></div>
-        </div>
-    </div>
-    <div class="button-container">
-        <button id="submitBtn">Submit</button>
-    </div>
+    </form>
     <table id="liveTable">
         <thead>
             <tr>
@@ -295,5 +379,19 @@
             <!-- Live data rows will be added here -->
         </tbody>
     </table>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            flatpickr("#allocationStartDate", {
+                dateFormat: "Y-m-d"
+            });
+            flatpickr("#leaveDates", {
+                mode: "multiple",
+                dateFormat: "Y-m-d"
+            });
+        });
+    </script>
 </body>
 </html>
+
