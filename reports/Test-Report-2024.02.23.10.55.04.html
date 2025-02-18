@@ -1,7 +1,259 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* Your existing CSS (unchanged) */
+    </style>
+</head>
+
+<body>
+    <h2>Attendance Management Form</h2>
+    <div class="form-container">
+        <!-- Associate Name -->
+        <div class="form-group">
+            <label for="associateName">Associate Name:</label>
+            <input type="text" id="associateName" name="associateName" placeholder="Enter Associate Name">
+            <ul id="suggestions" class="suggestions"></ul>
+            <div class="error-message" id="associateNameError"></div>
+        </div>
+        <!-- Associate ID -->
+        <div class="form-group">
+            <label for="associateId">Associate ID:</label>
+            <input type="text" id="associateId" name="associateId" placeholder="Enter Associate ID">
+            <div class="error-message" id="associateIdError"></div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" name="status">
+                <option value="">Select Status</option>
+                <option value="Active">Active</option>
+                <option value="UBL">UBL</option>
+            </select>
+            <div class="error-message" id="statusError"></div>
+        </div>
+
+        <!-- Project ID -->
+        <div class="form-group">
+            <label for="projectId">Project ID:</label>
+            <input type="text" id="projectId" name="projectId" placeholder="Enter Project ID">
+            <div class="error-message" id="projectIdError"></div>
+        </div>
+
+        <!-- Project Name -->
+        <div class="form-group">
+            <label for="projectName">Project Name:</label>
+            <input type="text" id="projectName" name="projectName" placeholder="Enter Project Name">
+            <div class="error-message" id="projectNameError"></div>
+        </div>
+
+        <!-- Allocation Start Date -->
+        <div class="form-group">
+            <label for="allocationStartDate">Allocation Start Date:</label>
+            <input type="text" id="allocationStartDate" name="allocationStartDate" placeholder="Enter Allocation Start Date">
+            <div class="error-message" id="allocationStartDateError"></div>
+        </div>
+
+        <!-- Onshore/Offshore -->
+        <div class="form-group">
+            <label for="onshoreOffshore">Onshore/Offshore:</label>
+            <select id="onshoreOffshore" name="onshoreOffshore">
+                <option value="">Select Onshore/Offshore</option>
+                <option value="Onshore">Onshore</option>
+                <option value="Offshore">Offshore</option>
+            </select>
+            <div class="error-message" id="onshoreOffshoreError"></div>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" placeholder="Enter Location">
+            <div class="error-message" id="locationError"></div>
+        </div>
+
+        <!-- Leave Dates -->
+        <div class="form-group">
+            <label for="leaveDates">Leave Dates:</label>
+            <input type="text" id="leaveDates" name="leaveDates" placeholder="Enter Leave Dates (comma-separated)">
+            <div class="error-message" id="leaveDatesError"></div>
+        </div>
+
+        <!-- Leave Type -->
+        <div class="form-group">
+            <label for="leaveType">Leave Type:</label>
+            <select id="leaveType" name="leaveType">
+                <option value="">Select Leave Type</option>
+                <option value="PL">PL</option>
+                <option value="BLD">BLD</option>
+            </select>
+            <div class="error-message" id="leaveTypeError"></div>
+        </div>
+
+        <div class="button-container">
+            <button id="submitBtn">Submit</button>
+            <button id="editBtn">Edit</button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.getElementById('editBtn').addEventListener('click', function (event) {
+            event.preventDefault();
+            const associateId = document.getElementById('associateId').value;
+            const associateName = document.getElementById('associateName').value;
+
+            if (associateId || associateName) {
+                fetch(`/fetch-data?associateId=${associateId}&associateName=${associateName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            document.getElementById('associateId').value = data['Associate ID'];
+                            document.getElementById('associateName').value = data['Associate Name'];
+                            document.getElementById('status').value = data['Status'];
+                            document.getElementById('projectId').value = data['Project ID'];
+                            document.getElementById('projectName').value = data['Project Name'];
+                            document.getElementById('allocationStartDate').value = data['Allocation Start Date'];
+                            document.getElementById('onshoreOffshore').value = data['Onshore/Offshore'];
+                            document.getElementById('location').value = data['Location'];
+                            document.getElementById('leaveDates').value = data['Leave Dates'];
+                            document.getElementById('leaveType').value = data['Leave Type'];
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                alert('Please enter Associate ID or Associate Name to edit.');
+            }
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', function (event) {
+            event.preventDefault();
+            let isValid = true;
+            const fields = [
+                { field: document.getElementById('associateId'), errorId: 'associateIdError' },
+                { field: document.getElementById('associateName'), errorId: 'associateNameError' },
+                { field: document.getElementById('status'), errorId: 'statusError' },
+                { field: document.getElementById('projectId'), errorId: 'projectIdError' },
+                { field: document.getElementById('projectName'), errorId: 'projectNameError' },
+                { field: document.getElementById('allocationStartDate'), errorId: 'allocationStartDateError' },
+                { field: document.getElementById('onshoreOffshore'), errorId: 'onshoreOffshoreError' },
+                { field: document.getElementById('location'), errorId: 'locationError' },
+                { field: document.getElementById('leaveDates'), errorId: 'leaveDatesError' },
+                { field: document.getElementById('leaveType'), errorId: 'leaveTypeError' }
+            ];
+
+            fields.forEach(({ field, errorId }) => {
+                const errorMessage = document.getElementById(errorId);
+                if (!field.value) {
+                    field.classList.add('invalid');
+                    errorMessage.textContent = 'This field is required';
+                    isValid = false;
+                } else {
+                    field.classList.remove('invalid');
+                    errorMessage.textContent = '';
+                }
+            });
+
+            if (isValid) {
+                const formData = {
+                    associateId: document.getElementById('associateId').value,
+                    associateName: document.getElementById('associateName').value,
+                    status: document.getElementById('status').value,
+                    projectId: document.getElementById('projectId').value,
+                    projectName: document.getElementById('projectName').value,
+                    allocationStartDate: document.getElementById('allocationStartDate').value,
+                    onshoreOffshore: document.getElementById('onshoreOffshore').value,
+                    location: document.getElementById('location').value,
+                    leaveDates: document.getElementById('leaveDates').value,
+                    leaveType: document.getElementById('leaveType').value
+                };
+
+                fetch('/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(formData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            alert('Form submitted successfully!');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+
+        flatpickr("#allocationStartDate", {
+            dateFormat: "Y-m-d"
+        });
+
+        flatpickr("#leaveDates", {
+            mode: "multiple",
+            dateFormat: "Y-m-d"
+        });
+    </script>
+</body>
+
+</html>
+
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const XLSX = require('xlsx');
+const fs = require('fs');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/index.html'); // Serve the HTML file
+});
+
+app.post('/submit', (req, res) => {
+    const { associateId, associateName, status, projectId, projectName, allocationStartDate, onshoreOffshore, location, leaveDates, leaveType } = req.body;
+
+    if (!associateId || !associateName || !status || !projectId || !projectName || !allocationStartDate || !onshoreOffshore || !location || !leaveDates || !leaveType) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const filePath = 'attandence.xlsx';
+    let workbook;
+    if (fs.existsSync(filePath)) {
+        workbook = XLSX.readFile(filePath);
+    } else {
+        workbook = XLSX.utils.book_new();
+    }
+
+    const sheetName = 'Sheet1';
+    let worksheet = workbook.Sheets[sheetName];
+    if (!worksheet) {
+        worksheet = XLSX.utils.aoa_to_sheet([['Associate ID', 'Associate Name', 'Status', 'Project ID', 'Project Name', 'Allocation Start Date', 'Onshore/Offshore', 'Location', 'Leave Dates', 'Leave Type']]);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    }
+
+    const newRow = [
+        associateId, associateName, status, projectId, projectName, allocationStartDate, onshoreOffshore, location, leaveDates, leaveType
+    ];
+
+    XLSX.utils.sheet_add_aoa(worksheet, [newRow], { origin: -1 });
+    XLSX.writeFile(workbook, filePath);
+    res.json({ message: 'Form submitted successfully!' });
+});
+
 app.get('/fetch-data', (req, res) => {
     const { associateId, associateName } = req.query;
 
-    const filePath = 'C:/Users/2308397/PilotProject-Ally/attandence.xlsx';
+    const filePath = 'attandence.xlsx';
     if (!fs.existsSync(filePath)) {
         return res.status(404).json({ error: 'Data file not found' });
     }
@@ -9,26 +261,17 @@ app.get('/fetch-data', (req, res) => {
     const workbook = XLSX.readFile(filePath);
     const sheetName = 'Sheet1';
     const worksheet = workbook.Sheets[sheetName];
-
-    if (!worksheet) {
-        return res.status(404).json({ error: 'Sheet not found in Excel file' });
-    }
-
-    // Convert the sheet into a JSON array
     const data = XLSX.utils.sheet_to_json(worksheet);
 
-    // Debugging: Print the data being read from the sheet
-    console.log('Data read from Excel:', data);
-
-    // Search for matching record
     const record = data.find(row => row['Associate ID'] === associateId || row['Associate Name'] === associateName);
-
     if (!record) {
         return res.status(404).json({ error: 'Record not found' });
     }
 
-    // Debugging: Print the found record
-    console.log('Found record:', record);
-
     res.json(record);
 });
+
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
+});
+
