@@ -1,139 +1,196 @@
-function getCurrentMonthHeaders() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    return Array.from({length: daysInMonth}, (_, i) => {
-        const date = new Date(year, month, i + 1);
-        return date.toLocaleDateString('en-GB', {day: '2-digit', month: 'short'}).replace(/ /g, '-');
-    });
+const express = require('express');
+const bodyParser = require('body-parser');
+const Excel = require('exceljs');
+const moment = require('moment');
+
+const app = express();
+const port = 3000;
+
+// Middlewares
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public')); // Serve static files (e.g., HTML form)
+
+// Create or load Excel file
+const excelFilePath = './output.xlsx';
+
+async function createExcelFile() {
+  const workbook = new Excel.Workbook();
+  const worksheet = workbook.addWorksheet('Data');
+
+  // Get the current month dates
+  const currentDate = moment();
+  const datesToUse = getMonthDates(currentDate);
+
+  // Set the header row in Excel
+  let headers = [
+    'Associate Name', 
+    'Associate ID', 
+    'Status', 
+    'Projectivity', 
+    'Project Name', 
+    'Allocation', 
+    'Started On', 
+    'Onshore/Offshore', 
+    'Location', 
+    ...datesToUse // Add dates as columns
+  ];
+  worksheet.addRow(headers);
+
+  // Save the initial workbook (empty but with headers)
+  await workbook.xlsx.writeFile(excelFilePath);
+  console.log('Excel file created with headers');
 }
 
-app.post('/submit', (req, res) => {
-    const formData = req.body;
-    const filePath = 'attendance.xlsx';
+function getMonthDates(date) {
+  const monthStart = date.startOf('month');
+  const monthEnd = date.endOf('month');
+  
+  const dates = [];
+  let currentDate = monthStart;
 
-    // Validate required fields
-    const requiredFields = ['associateName', 'associateId', 'status', 'projectId', 
-                           'projectName', 'allocationStartDate', 'onshoreOffshore', 
-                           'location', 'leaveDates', 'leaveType'];
-    
-    // Process leave dates
-    const currentHeaders = getCurrentMonthHeaders();
-    const leaveDates = formData.leaveDates.split(',')
-        .map(dateStr => {
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const date = new Date(year, month - 1, day);
-            return date.toLocaleDateString('en-GB', {day: '2-digit', month: 'short'}).replace(/ /g, '-');
-        })
-        .filter(d => currentHeaders.includes(d));
+  // Loop through all days of the month
+  while (currentDate.isBefore(monthEnd) || currentDate.isSame(monthEnd, 'day')) {
+    dates.push(currentDate.format('DD-MMM')); // Format date as 'DD-MMM'
+    currentDate = currentDate.add(1, 'day'); // Move to the next day
+  }
 
-    // Create new row data
-    const defaultStatus = formData.status === 'Active' ? 'BLD' : 'UBL';
-    const dateColumns = {};
-    currentHeaders.forEach(header => {
-        dateColumns[header] = leaveDates.includes(header) ? formData.leaveType : defaultStatus;
-    });
+  return dates;
+}
 
-    // Read and update existing data
-    let workbook;
-    let data = [];
-    
-    if (fs.existsSync(filePath)) {
-        workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        data = XLSX.utils.sheet_to_json(worksheet);
-    } else {
-        workbook = XLSX.utils.book_new();
-    }
+// Create Excel file if it doesn't exist
+const fs = require('fs');
+if (!fs.existsSync(excelFilePath)) {
+  createExcelFile();
+}
 
-    // Update or add entry
-    const existingIndex = data.findIndex(row => row['Associate ID'] === formData.associateId);
-    const newRow = {
-        'Associate Name': formData.associateName,
-        'Associate ID': formData.associateId,
-        'Status': formData.status,
-        'Project ID': formData.projectId,
-        'Project Name': formData.projectName,
-        'Allocation Start Date': formData.allocationStartDate,
-        'Onshore/Offshore': formData.onshoreOffshore,
-        'Location': formData.location,
-        ...dateColumns
-    };
+// Endpoint to add data dynamically from UI
+app.post('/add-data', async (req, res) => {
+  const { associate_name, associate_id, status, projectivity, project_name, allocation, started_on, onshore_offshore, location, date_data } = req.body;
 
-    if (existingIndex !== -1) {
-        data[existingIndex] = newRow;
-    } else {
-        data.push(newRow);
-    }
+  const workbook = new Excel.Workbook();
+  await workbook.xlsx.readFile(excelFilePath);
+  const worksheet = workbook.getWorksheet('Data');
 
-    // Update workbook
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
-    XLSX.writeFile(workbook, filePath);
+  // Add a new row for the new associate data
+  const newRow = [
+    associate_name,
+    associate_id,
+    status,
+    projectivity,
+    project_name,
+    allocation,
+    started_on,
+    onshore_offshore,
+    location,
+    ...date_data // Date data (array of values for each date in the month)
+  ];
 
-    res.json({ message: 'Data saved successfully!' });
+  worksheet.addRow(newRow);
+
+  // Save the updated Excel file
+  await workbook.xlsx.writeFile(excelFilePath);
+  console.log('Data added to Excel file');
+  res.send('Data added successfully');
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
 
 
-<!-- Add this table section below the form-container -->
-<h2>Attendance View</h2>
-<div id="tableContainer">
-    <table id="attendanceTable">
-        <thead>
-            <tr>
-                <th>Associate Name</th>
-                <th>Associate ID</th>
-                <th>Status</th>
-                <th>Project ID</th>
-                <th>Project Name</th>
-                <th>Allocation Start Date</th>
-                <th>Onshore/Offshore</th>
-                <th>Location</th>
-                <!-- Dynamic date headers will be inserted here -->
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Table rows will be populated dynamically -->
-        </tbody>
-    </table>
-</div>
-
-<script>
-function generateDateHeaders() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enter Associate Data</title>
+</head>
+<body>
+  <h1>Enter Associate Data</h1>
+  
+  <form id="data-form">
+    <label for="associate_name">Associate Name:</label>
+    <input type="text" id="associate_name" name="associate_name" required><br><br>
     
-    return Array.from({length: daysInMonth}, (_, i) => {
-        const date = new Date(year, month, i + 1);
-        return {
-            dateStr: date.toLocaleDateString('en-GB', {day: '2-digit', month: 'short'}).replace(/ /g, '-'),
-            day: date.toLocaleDateString('en-US', {weekday: 'short'})
-        };
-    });
-}
+    <label for="associate_id">Associate ID:</label>
+    <input type="text" id="associate_id" name="associate_id" required><br><br>
 
-function updateTableHeaders() {
-    const table = document.getElementById('attendanceTable');
-    const headerRow = table.querySelector('thead tr');
+    <label for="status">Status:</label>
+    <input type="text" id="status" name="status" required><br><br>
+
+    <label for="projectivity">Projectivity:</label>
+    <input type="text" id="projectivity" name="projectivity" required><br><br>
+
+    <label for="project_name">Project Name:</label>
+    <input type="text" id="project_name" name="project_name" required><br><br>
+
+    <label for="allocation">Allocation:</label>
+    <input type="text" id="allocation" name="allocation" required><br><br>
+
+    <label for="started_on">Started On:</label>
+    <input type="date" id="started_on" name="started_on" required><br><br>
+
+    <label for="onshore_offshore">Onshore/Offshore:</label>
+    <input type="text" id="onshore_offshore" name="onshore_offshore" required><br><br>
+
+    <label for="location">Location:</label>
+    <input type="text" id="location" name="location" required><br><br>
+
+    <div id="date-inputs"></div>
     
-    // Clear existing date headers
-    while(headerRow.children.length > 8) {
-        headerRow.removeChild(headerRow.lastChild);
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    const dateInputs = document.getElementById('date-inputs');
+    
+    // Function to dynamically create date inputs for the current month
+    function generateDateInputs() {
+      const currentDate = new Date();
+      const month = currentDate.getMonth(); // Current month
+      const year = currentDate.getFullYear(); // Current year
+
+      // Get the number of days in the current month
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateInput = document.createElement('div');
+        dateInput.innerHTML = `
+          <label for="date_${day}">${day < 10 ? '0' : ''}${day}-${month + 1}:</label>
+          <input type="text" name="date_data[]" id="date_${day}" required>
+        `;
+        dateInputs.appendChild(dateInput);
+      }
     }
+    
+    // Generate the dynamic date inputs when the page loads
+    generateDateInputs();
 
-    // Add new date headers
-    generateDateHeaders().forEach(({dateStr, day}) => {
-        const th = document.createElement('th');
-        th.textContent = `${dateStr}\n${day}`;
-        th.style.whiteSpace = 'pre-line';
-        headerRow.appendChild(th);
+    // Handle form submission
+    document.getElementById('data-form').addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const formData = new FormData(this);
+      const data = {};
+      
+      formData.forEach((value, key) => {
+        if (!data[key]) data[key] = [];
+        data[key].push(value);
+      });
+
+      fetch('/add-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      .then(response => response.text())
+      .then(message => alert(message))
+      .catch(error => console.error('Error:', error));
     });
-}
-
-// Call this function on page load and whenever month changes
-updateTableHeaders();
-</script>
+  </script>
+</body>
+</html>
