@@ -1,176 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Attendance Management</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background-color: #f0f2f5;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 600;
-    }
-
-    input,
-    .flatpickr-input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    .flatpickr-calendar {
-      margin-top: 5px;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <h1>Associate Attendance</h1>
-    <form id="data-form">
-      <div class="form-group">
-        <label for="associate_id">Associate ID:</label>
-        <input type="text" id="associate_id" name="associate_id" required>
-      </div>
-
-      <div class="form-group">
-        <label for="associate_name">Associate Name:</label>
-        <input type="text" id="associate_name" name="associate_name" required>
-      </div>
-
-      <div class="form-group">
-        <label for="status">Status:</label>
-        <input type="text" id="status" name="status" required>
-      </div>
-
-      <div class="form-group">
-        <label for="productivity">Productivity:</label>
-        <input type="text" id="productivity" name="productivity" required>
-      </div>
-
-      <div class="form-group">
-        <label for="project_name">Project Name:</label>
-        <input type="text" id="project_name" name="project_name" required>
-      </div>
-
-      <div class="form-group">
-        <label for="allocation">Allocation:</label>
-        <input type="text" id="allocation" name="allocation" required>
-      </div>
-
-      <div class="form-group">
-        <label for="started_on">Started On:</label>
-        <input type="text" id="started_on" name="started_on" required>
-      </div>
-
-      <div class="form-group">
-        <label for="onshore_offshore">Onshore/Offshore:</label>
-        <input type="text" id="onshore_offshore" name="onshore_offshore" required>
-      </div>
-
-      <div class="form-group">
-        <label for="location">Location:</label>
-        <input type="text" id="location" name="location" required>
-      </div>
-
-      <div class="form-group">
-        <label for="leave_dates">Leave Dates:</label>
-        <input type="text" id="leave_dates" name="leave_dates" placeholder="Select leave dates" readonly>
-      </div>
-
-      <button type="submit">Submit</button>
-    </form>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script>
-    flatpickr('#leave_dates', {
-      mode: 'multiple',
-      dateFormat: 'd-M',
-      altFormat: 'd-M-Y',
-      altInput: true,
-      allowInput: true,
-      static: true
-    });
-
-    document.getElementById('data-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const formData = {
-        associate_id: document.getElementById('associate_id').value,
-        associate_name: document.getElementById('associate_name').value,
-        status: document.getElementById('status').value,
-        productivity: document.getElementById('productivity').value,
-        project_name: document.getElementById('project_name').value,
-        allocation: document.getElementById('allocation').value,
-        started_on: document.getElementById('started_on').value,
-        onshore_offshore: document.getElementById('onshore_offshore').value,
-        location: document.getElementById('location').value,
-        leave_dates: document.getElementById('leave_dates').value.split(', ')
-      };
-
-      try {
-        const response = await fetch('/add-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-
-        const result = await response.text();
-        alert(result);
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error submitting form');
-      }
-    });
-  </script>
-</body>
-
-</html>
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const Excel = require('exceljs');
 const moment = require('moment');
 const fs = require('fs');
-const path = require('path');
 
 const app = express();
 const port = 3000;
@@ -179,8 +11,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const excelFilePath = 'C:/Users/2308397/PilotProject-Ally/attandence.xlsx';
+const excelFilePath = './output.xlsx';
 
+// Function to create an Excel file with headers if it does not exist
 async function createExcelFile() {
     const workbook = new Excel.Workbook();
     const worksheet = workbook.addWorksheet('Data');
@@ -188,23 +21,24 @@ async function createExcelFile() {
     const currentDate = moment();
     const datesToUse = getMonthDates(currentDate);
 
-    const headers = [
-        'Associate ID', 'Associate Name', 'Status', 'Productivity', 
-        'Project Name', 'Allocation', 'Started On', 'Onshore/Offshore', 
-        'Location', ...datesToUse
+    // Define headers
+    let headers = [
+        'Associate ID', 'Associate Name', 'Status', 'Productivity', 'Project Name', 
+        'Allocation', 'Started On', 'Onshore/Offshore', 'Location', ...datesToUse
     ];
-    
+
     worksheet.addRow(headers);
     await workbook.xlsx.writeFile(excelFilePath);
     console.log('Excel file created with headers');
 }
 
+// Function to get all dates of the current month
 function getMonthDates(date) {
     const monthStart = date.clone().startOf('month');
     const monthEnd = date.clone().endOf('month');
     const dates = [];
-    
     let currentDate = monthStart.clone();
+
     while (currentDate.isSameOrBefore(monthEnd)) {
         dates.push(currentDate.format('DD-MMM'));
         currentDate.add(1, 'day');
@@ -212,63 +46,158 @@ function getMonthDates(date) {
     return dates;
 }
 
-// Create new Excel file if it doesn't exist or month has changed
-async function initializeExcelFile() {
-    if (!fs.existsSync(excelFilePath)) {
-        await createExcelFile();
-        return;
-    }
+// Ensure Excel file exists
+if (!fs.existsSync(excelFilePath)) {
+    createExcelFile();
+}
 
+// API to add data to Excel
+app.post('/add-data', async (req, res) => {
+    const { associate_id, associate_name, status, productivity, project_name, 
+            allocation, started_on, onshore_offshore, location, leave_dates } = req.body;
+    
     const workbook = new Excel.Workbook();
     await workbook.xlsx.readFile(excelFilePath);
     const worksheet = workbook.getWorksheet('Data');
     
-    const existingDates = worksheet.getRow(1).values
-        .slice(9) // Skip first 9 columns
-        .filter(d => d);
-    
-    const currentDates = getMonthDates(moment());
-    
-    if (existingDates.join(',') !== currentDates.join(',')) {
-        await createExcelFile();
-    }
+    const datesToUse = getMonthDates(moment());
+    const leaveSet = new Set(leave_dates);
+
+    // Prepare row data
+    const rowData = [
+        associate_id, associate_name, status, productivity, project_name, 
+        allocation, started_on, onshore_offshore, location
+    ];
+
+    // Fill attendance data
+    datesToUse.forEach(date => {
+        rowData.push(leaveSet.has(date) ? 'Personal Leave' : 'Present');
+    });
+
+    worksheet.addRow(rowData);
+    await workbook.xlsx.writeFile(excelFilePath);
+    console.log('Data added to Excel file');
+    res.send('Data added successfully');
+});
+
+// Start the server
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Enter Associate Data</h1>
+        <form id="data-form">
+            <label for="associate_id">Associate ID:</label>
+            <input type="text" id="associate_id" name="associate_id" required>
+
+            <label for="associate_name">Associate Name:</label>
+            <input type="text" id="associate_name" name="associate_name" required>
+
+            <label for="status">Status:</label>
+            <input type="text" id="status" name="status" required>
+
+            <label for="productivity">Productivity:</label>
+            <input type="text" id="productivity" name="productivity" required>
+
+            <label for="project_name">Project Name:</label>
+            <input type="text" id="project_name" name="project_name" required>
+
+            <label for="allocation">Allocation:</label>
+            <input type="text" id="allocation" name="allocation" required>
+
+            <label for="started_on">Started On:</label>
+            <input type="date" id="started_on" name="started_on" required>
+
+            <label for="onshore_offshore">Onshore/Offshore:</label>
+            <input type="text" id="onshore_offshore" name="onshore_offshore" required>
+
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" required>
+
+            <label for="leave_dates">Select Leave Dates:</label>
+            <input type="text" id="leave_dates" name="leave_dates" multiple>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+}
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #218838;
 }
 
-app.post('/add-data', async (req, res) => {
-    try {
-        const { associate_id, associate_name, status, productivity, 
-                project_name, allocation, started_on, onshore_offshore, 
-                location, leave_dates } = req.body;
+document.addEventListener('DOMContentLoaded', function () {
+    flatpickr("#leave_dates", {
+        mode: "multiple",
+        dateFormat: "d-M-Y",
+    });
 
-        const workbook = new Excel.Workbook();
-        await workbook.xlsx.readFile(excelFilePath);
-        const worksheet = workbook.getWorksheet('Data');
+    document.getElementById('data-form').addEventListener('submit', function (event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const data = {};
 
-        const currentDates = getMonthDates(moment());
-        const leaveSet = new Set(leave_dates);
-
-        const rowData = [
-            associate_id, associate_name, status, productivity,
-            project_name, allocation, moment(started_on).format('DD-MMM-YYYY'),
-            onshore_offshore, location
-        ];
-
-        currentDates.forEach(date => {
-            rowData.push(leaveSet.has(date) ? 'Personal Leave' : 'Present');
+        formData.forEach((value, key) => {
+            if (key === 'leave_dates') {
+                if (!data[key]) data[key] = [];
+                data[key].push(value);
+            } else {
+                data[key] = value;
+            }
         });
 
-        worksheet.addRow(rowData);
-        await workbook.xlsx.writeFile(excelFilePath);
-
-        res.send('Data added successfully');
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).send('Error adding data');
-    }
-});
-
-initializeExcelFile().then(() => {
-    app.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}`);
+        fetch('/add-data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.text())
+        .then(message => alert(message))
+        .catch(error => console.error('Error:', error));
     });
 });
+
