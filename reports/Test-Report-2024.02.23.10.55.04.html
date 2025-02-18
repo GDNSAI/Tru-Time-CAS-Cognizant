@@ -1,3 +1,101 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const ExcelJS = require('exceljs');
+const fs = require('fs');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve static files (HTML, CSS, JS)
+app.use(express.static('public'));
+
+app.post('/submit', async (req, res) => {
+    const { associateName, associateId, status, projectId, projectName, allocationStartDate, onshoreOffshore, location, leaveDates, leaveType } = req.body;
+
+    // Validate all required fields
+    if (!associateName || !associateId || !status || !projectId || !projectName || !allocationStartDate || !onshoreOffshore || !location || !leaveDates || !leaveType) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const filePath = 'attendance.xlsx';
+    const headers = ['Associate Name', 'Associate ID', 'Status', 'Project ID', 'Project Name', 'Allocation Start Date', 'Onshore/Offshore', 'Location', 'Leave Dates', 'Leave Type'];
+    let data = [];
+
+    const workbook = new ExcelJS.Workbook();
+    if (fs.existsSync(filePath)) {
+        await workbook.xlsx.readFile(filePath);
+    } else {
+        const worksheet = workbook.addWorksheet('Sheet1');
+        worksheet.columns = headers.map(header => ({ header, key: header }));
+    }
+
+    const worksheet = workbook.getWorksheet('Sheet1');
+    data = worksheet.getSheetValues().slice(1).map(row => {
+        return headers.reduce((acc, header, index) => {
+            acc[header] = row[index + 1];
+            return acc;
+        }, {});
+    });
+
+    // Check if the Associate ID already exists
+    const existingIndex = data.findIndex(row => row['Associate ID'] === associateId);
+
+    // Prepare the new row data
+    const newRow = {
+        'Associate Name': associateName,
+        'Associate ID': associateId,
+        'Status': status,
+        'Project ID': projectId,
+        'Project Name': projectName,
+        'Allocation Start Date': allocationStartDate,
+        'Onshore/Offshore': onshoreOffshore,
+        'Location': location,
+        'Leave Dates': leaveDates,
+        'Leave Type': leaveType
+    };
+
+    // Update or add the new row
+    if (existingIndex !== -1) {
+        worksheet.getRow(existingIndex + 2).values = Object.values(newRow);
+    } else {
+        worksheet.addRow(newRow);
+    }
+
+    await workbook.xlsx.writeFile(filePath);
+    res.json({ message: 'Data saved successfully!' });
+});
+
+app.get('/fetch-data', async (req, res) => {
+    const { associateId, associateName } = req.query;
+
+    const filePath = 'attendance.xlsx';
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'File not found' });
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(filePath);
+    const worksheet = workbook.getWorksheet('Sheet1');
+    const data = worksheet.getSheetValues().slice(1).map(row => {
+        return headers.reduce((acc, header, index) => {
+            acc[header] = row[index + 1];
+            return acc;
+        }, {});
+    });
+
+    // Find by Associate ID or Name
+    const record = data.find(row =>
+        row['Associate ID'] === associateId ||
+        row['Associate Name'] === associateName
+    );
+
+    if (!record) return res.status(404).json({ error: 'Record not found' });
+    res.json(record);
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+
+
 <!DOCTYPE html>
 <html>
 
@@ -275,26 +373,27 @@
 
         <!-- Leave Dates -->
         <div class="form-group">
-            <label for="leaveDates">Leave Dates:</label>
-            <input type="text" id="leaveDates" name="leaveDates" placeholder="Enter Leave Dates (comma-separated)">
-            <div class="error-message" id="leaveDatesError"></div>
-        </div>
+        <label for="leaveDates">Leave Dates:</label>
+        <input type="text" id="leaveDates" name="leaveDates" placeholder="Enter Leave Dates (comma-separated)">
+        <div class="error-message" id="leaveDatesError"></div>
+    </div>
 
-        <!-- Leave Type -->
-        <div class="form-group">
-            <label for="leaveType">Leave Type:</label>
-            <select id="leaveType" name="leaveType">
-                <option value="">Select Leave Type</option>
-                <option value="PL">PL</option>
-                <option value="BLD">BLD</option>
-            </select>
-            <div class="error-message" id="leaveTypeError"></div>
-        </div>
+    <!-- Leave Type -->
+    <div class="form-group">
+        <label for="leaveType">Leave Type:</label>
+        <select id="leaveType" name="leaveType">
+            <option value="">Select Leave Type</option>
+            <option value="PL">PL</option>
+            <option value="BLD">BLD</option>
+        </select>
+        <div class="error-message" id="leaveTypeError"></div>
+    </div>
+    <div><ul id="leaveDatesList" class="leave-dates-list"></ul></div>
 
-        <div class="button-container">
-            <button id="submitBtn">Submit</button>
-            <button id="editBtn">Edit</button>
-        </div>
+    <div class="button-container">
+        <button id="submitBtn">Submit</button>
+        <button id="editBtn">Edit</button>
+    </div>
 
     </div>
 
@@ -326,8 +425,6 @@
                         document.getElementById('allocationStartDate').value = data['Allocation Start Date'];
                         document.getElementById('onshoreOffshore').value = data['Onshore/Offshore'];
                         document.getElementById('location').value = data['Location'];
-                        document.getElementById('leaveDates').value = data['Leave Dates'];
-                        document.getElementById('leaveType').value = data['Leave Type'];
                     }
                 })
                 .catch(error => console.error('Error:', error));
@@ -401,95 +498,46 @@
             mode: "multiple",
             dateFormat: "Y-m-d"
         });
+        document.addEventListener('DOMContentLoaded', function () {
+            const leaveDatesInput = document.getElementById('leaveDates');
+            const leaveDatesList = document.getElementById('leaveDatesList');
+
+            // Initialize flatpickr
+            flatpickr(leaveDatesInput, {
+                mode: "multiple",
+                dateFormat: "Y-m-d",
+                onChange: function (selectedDates, dateStr, instance) {
+                    updateLeaveDatesList(selectedDates);
+                }
+            });
+
+            function updateLeaveDatesList(dates) {
+                leaveDatesList.innerHTML = '';
+                dates.forEach(date => {
+                    const li = document.createElement('li');
+                    li.textContent = date.toISOString().split('T')[0];
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'Remove';
+                    removeButton.addEventListener('click', function () {
+                        removeDate(date);
+                    });
+                    li.appendChild(removeButton);
+                    leaveDatesList.appendChild(li);
+                });
+            }
+
+            function removeDate(dateToRemove) {
+                const dates = leaveDatesInput._flatpickr.selectedDates;
+                const index = dates.findIndex(date => date.getTime() === dateToRemove.getTime());
+                if (index !== -1) {
+                    dates.splice(index, 1);
+                    leaveDatesInput._flatpickr.setDate(dates);
+                    updateLeaveDatesList(dates);
+                }
+            }
+        });
+
     </script>
 </body>
 
 </html>
-
-
-const express = require('express');
-const bodyParser = require('body-parser');
-const XLSX = require('xlsx');
-const fs = require('fs');
-
-const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Serve static files (HTML, CSS, JS)
-app.use(express.static('public'));
-
-app.post('/submit', (req, res) => {
-    const {  associateName,associateId, status, projectId, projectName, allocationStartDate, onshoreOffshore, location, leaveDates, leaveType } = req.body;
-
-    // Validate all required fields
-    if ( !associateName || !associateId ||!status || !projectId || !projectName || !allocationStartDate || !onshoreOffshore || !location || !leaveDates || !leaveType) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
-
-    const filePath = 'attandence.xlsx';
-    const headers = [ 'Associate Name', 'Associate ID','Status', 'Project ID', 'Project Name', 'Allocation Start Date', 'Onshore/Offshore', 'Location', 'Leave Dates', 'Leave Type'];
-    let data = [];
-
-    // Read existing data if the file exists
-    if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets['Sheet1'];
-        data = XLSX.utils.sheet_to_json(worksheet);
-    }
-
-    // Check if the Associate ID already exists
-    const existingIndex = data.findIndex(row => row['Associate ID'] === associateId);
-
-    // Prepare the new row data
-    const newRow = {
-        'Associate Name': associateName,
-        'Associate ID': associateId,
-        'Status': status,
-        'Project ID': projectId,
-        'Project Name': projectName,
-        'Allocation Start Date': allocationStartDate,
-        'Onshore/Offshore': onshoreOffshore,
-        'Location': location,
-        'Leave Dates': leaveDates,
-        'Leave Type': leaveType
-    };
-
-    // Update or add the new row
-    if (existingIndex !== -1) {
-        data[existingIndex] = newRow;
-    } else {
-        data.push(newRow);
-    }
-
-    // Create a new workbook and worksheet
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-    XLSX.writeFile(workbook, filePath);
-
-    res.json({ message: 'Data saved successfully!' });
-});
-
-app.get('/fetch-data', (req, res) => {
-    const { associateId, associateName } = req.query;
-
-    const filePath = 'attandence.xlsx';
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: 'File not found' });
-    }
-
-    const workbook = XLSX.readFile(filePath);
-    const worksheet = workbook.Sheets['Sheet1'];
-    const data = XLSX.utils.sheet_to_json(worksheet);
-
-    // Find by Associate ID or Name
-    const record = data.find(row => 
-        row['Associate ID'] === associateId || 
-        row['Associate Name'] === associateName
-    );
-
-    if (!record) return res.status(404).json({ error: 'Record not found' });
-    res.json(record);
-});
-
-app.listen(3000, () => console.log('Server running on port 3000'));
