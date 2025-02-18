@@ -1,3 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Management</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f2f5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    input,
+    .flatpickr-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .flatpickr-calendar {
+      margin-top: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Associate Attendance</h1>
+    <form id="data-form">
+      <div class="form-group">
+        <label for="associate_id">Associate ID:</label>
+        <input type="text" id="associate_id" name="associate_id" required>
+      </div>
+
+      <div class="form-group">
+        <label for="associate_name">Associate Name:</label>
+        <input type="text" id="associate_name" name="associate_name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="status">Status:</label>
+        <input type="text" id="status" name="status" required>
+      </div>
+
+      <div class="form-group">
+        <label for="productivity">Productivity:</label>
+        <input type="text" id="productivity" name="productivity" required>
+      </div>
+
+      <div class="form-group">
+        <label for="project_name">Project Name:</label>
+        <input type="text" id="project_name" name="project_name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="allocation">Allocation:</label>
+        <input type="text" id="allocation" name="allocation" required>
+      </div>
+
+      <div class="form-group">
+        <label for="started_on">Started On:</label>
+        <input type="text" id="started_on" name="started_on" required>
+      </div>
+
+      <div class="form-group">
+        <label for="onshore_offshore">Onshore/Offshore:</label>
+        <input type="text" id="onshore_offshore" name="onshore_offshore" required>
+      </div>
+
+      <div class="form-group">
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" required>
+      </div>
+
+      <div class="form-group">
+        <label for="leave_dates">Leave Dates:</label>
+        <input type="text" id="leave_dates" name="leave_dates" placeholder="Select leave dates" readonly>
+      </div>
+
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    flatpickr('#leave_dates', {
+      mode: 'multiple',
+      dateFormat: 'd-M',
+      altFormat: 'd-M-Y',
+      altInput: true,
+      allowInput: true,
+      static: true
+    });
+
+    document.getElementById('data-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        associate_id: document.getElementById('associate_id').value,
+        associate_name: document.getElementById('associate_name').value,
+        status: document.getElementById('status').value,
+        productivity: document.getElementById('productivity').value,
+        project_name: document.getElementById('project_name').value,
+        allocation: document.getElementById('allocation').value,
+        started_on: document.getElementById('started_on').value,
+        onshore_offshore: document.getElementById('onshore_offshore').value,
+        location: document.getElementById('location').value,
+        leave_dates: document.getElementById('leave_dates').value.split(', ')
+      };
+
+      try {
+        const response = await fetch('/add-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.text();
+        alert(result);
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error submitting form');
+      }
+    });
+  </script>
+</body>
+
+</html>
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const Excel = require('exceljs');
@@ -12,7 +179,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const excelFilePath = './output.xlsx';
+const excelFilePath = 'C:/Users/2308397/PilotProject-Ally/attandence.xlsx';
 
 async function createExcelFile() {
     const workbook = new Excel.Workbook();
@@ -105,129 +272,3 @@ initializeExcelFile().then(() => {
         console.log(`Server running at http://localhost:${port}`);
     });
 });
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Management</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Associate Attendance</h1>
-        <form id="data-form">
-            <div class="form-group">
-                <label for="associate_id">Associate ID:</label>
-                <input type="text" id="associate_id" name="associate_id" required>
-            </div>
-
-            <div class="form-group">
-                <label for="associate_name">Associate Name:</label>
-                <input type="text" id="associate_name" name="associate_name" required>
-            </div>
-
-            <!-- Add other fields similarly -->
-
-            <div class="form-group">
-                <label for="leave_dates">Leave Dates:</label>
-                <input type="text" id="leave_dates" name="leave_dates" placeholder="Select leave dates" readonly>
-            </div>
-
-            <button type="submit">Submit</button>
-        </form>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
-        flatpickr('#leave_dates', {
-            mode: 'multiple',
-            dateFormat: 'd-M',
-            altFormat: 'd-M-Y',
-            altInput: true,
-            allowInput: true,
-            static: true
-        });
-
-        document.getElementById('data-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                associate_id: document.getElementById('associate_id').value,
-                associate_name: document.getElementById('associate_name').value,
-                // Add other fields
-                leave_dates: document.getElementById('leave_dates').value.split(', ')
-            };
-
-            try {
-                const response = await fetch('/add-data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.text();
-                alert(result);
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error submitting form');
-            }
-        });
-    </script>
-</body>
-</html>
-
-
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #f0f2f5;
-}
-
-.container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-
-input, .flatpickr-input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
-.flatpickr-calendar {
-    margin-top: 5px;
-}
