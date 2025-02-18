@@ -3,6 +3,7 @@
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
+        /* Your existing CSS */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             margin: 0;
@@ -32,14 +33,16 @@
             margin-bottom: 5px;
             font-size: 14px;
         }
-        input, select {
+        input,
+        select {
             padding: 8px;
             border: 2px solid #ed97de;
             border-radius: 5px;
             font-size: 12px;
             background: #f9f9f9;
         }
-        input:focus, select:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
@@ -79,12 +82,82 @@
             font-size: 24px;
             font-weight: 700;
         }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        ul li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ed97de;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        ul li button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        ul li button:hover {
+            background: #c0392b;
+        }
+        .suggestions {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .suggestions li {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestions li:hover {
+            background: #f0f0f0;
+        }
+        .leave-dates-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .leave-dates-list li {
+            flex: 1 1 calc(25% - 10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ed97de;
+            border-radius: 5px;
+        }
+        .leave-dates-list li button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .leave-dates-list li button:hover {
+            background: #c0392b;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        th, td {
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
@@ -101,167 +174,299 @@
             background-color: darkgreen;
             color: white;
         }
-        .ubl {
-            background-color: #FFA500;
-            color: white;
-        }
-        .w {
-            background-color: #ccc;
-            color: #333;
-        }
     </style>
 </head>
+
 <body>
     <h2>Attendance Management Form</h2>
     <div class="form-container">
-        <!-- Form fields (same as your original code) -->
-        <!-- ... -->
+        <!-- Associate Name -->
+        <div class="form-group">
+            <label for="associateName">Associate Name:</label>
+            <input type="text" id="associateName" name="associateName" placeholder="Enter Associate Name">
+            <ul id="suggestions" class="suggestions"></ul>
+            <div class="error-message" id="associateNameError"></div>
+        </div>
+        <!-- Associate ID -->
+        <div class="form-group">
+            <label for="associateId">Associate ID:</label>
+            <input type="number" id="associateId" name="associateId" placeholder="Enter Associate ID">
+            <div class="error-message" id="associateIdError"></div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" name="status">
+                <option value="">Select Status</option>
+                <option value="Active">Active</option>
+                <option value="UBL">UBL</option>
+            </select>
+            <div class="error-message" id="statusError"></div>
+        </div>
+
+        <!-- Project ID -->
+        <div class="form-group">
+            <label for="projectId">Project ID:</label>
+            <select id="projectId" name="projectId">
+                <option value="">Select Project ID</option>
+                <option value="1000413943">1000413943</option>
+                <option value="1000413944">1000413944</option>
+                <option value="1000123764">1000123764</option>
+                <option value="1000279013">1000279013</option>
+                <option value="1000325939">1000325939</option>
+                <option value="1000433887">1000433887</option>
+                <option value="1000419942">1000419942</option>
+                <option value="1000325940">1000325940</option>
+            </select>
+            <div class="error-message" id="projectIdError"></div>
+        </div>
+
+        <!-- Project Name -->
+        <div class="form-group">
+            <label for="projectName">Project Name:</label>
+            <select id="projectName" name="projectName">
+                <option value="">Select Project Name</option>
+                <option value="Ally IPRM">Ally IPRM</option>
+                <option value="Auto & Ins. Product Delivery">Auto & Ins. Product Delivery</option>
+                <option value="Engg. Technology Operations">Engg. Technology Operations</option>
+                <option value="CCBT - Performance Testing">CCBT - Performance Testing</option>
+                <option value="Ally Corporate Technology">Ally Corporate Technology</option>
+                <option value="Ally Fi-SmartCash MF Batch Mod">Ally Fi-SmartCash MF Batch Mod</option>
+                <option value="Ally Webtools Data Migration">Ally Webtools Data Migration</option>
+                <option value="Ally CCBT">Ally CCBT</option>
+            </select>
+            <div class="error-message" id="projectNameError"></div>
+        </div>
+
+        <!-- Allocation Start Date -->
+        <div class="form-group">
+            <label for="allocationStartDate">Allocation Start Date:</label>
+            <input type="text" id="allocationStartDate" name="allocationStartDate"
+                placeholder="Enter Allocation Start Date">
+            <div class="error-message" id="allocationStartDateError"></div>
+        </div>
+
+        <!-- Onshore/Offshore -->
+        <div class="form-group">
+            <label for="onshoreOffshore">Onshore/Offshore:</label>
+            <select id="onshoreOffshore" name="onshoreOffshore">
+                <option value="">Select Onshore/Offshore</option>
+                <option value="On">Onshore</option>
+                <option value="Off">Offshore</option>
+            </select>
+            <div class="error-message" id="onshoreOffshoreError"></div>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" placeholder="Enter Location">
+            <div class="error-message" id="locationError"></div>
+        </div>
+
+        <!-- Leave Dates -->
+        <div class="form-group">
+        <label for="leaveDates">Leave Dates:</label>
+        <input type="text" id="leaveDates" name="leaveDates" placeholder="Enter Leave Dates (comma-separated)">
+        <div class="error-message" id="leaveDatesError"></div>
     </div>
 
-    <div id="attendanceTable"></div>
+    <!-- Leave Type -->
+    <div class="form-group">
+        <label for="leaveType">Leave Type:</label>
+        <select id="leaveType" name="leaveType">
+            <option value="">Select Leave Type</option>
+            <option value="PL">PL</option>
+            <option value="UPL">UPL</option>
+            <option value="UHD">UHD</option>
+            <option value="HDL">HDL</option>
+        </select>
+        <div class="error-message" id="leaveTypeError"></div>
+    </div>
+    <div><ul id="leaveDatesList" class="leave-dates-list"></ul></div>
+
+    <div class="button-container">
+        <button id="submitBtn">Submit</button>
+        <button id="editBtn">Edit</button>
+    </div>
+
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            flatpickr("#allocationStartDate", { dateFormat: "Y-m-d" });
-            flatpickr("#leaveDates", { mode: "multiple", dateFormat: "Y-m-d" });
-        });
-
-        document.getElementById('submitBtn').addEventListener('click', function (event) {
+        document.getElementById('editBtn').addEventListener('click', function (event) {
             event.preventDefault();
-            const formData = {
-                associateId: document.getElementById('associateId').value,
-                associateName: document.getElementById('associateName').value,
-                status: document.getElementById('status').value,
-                projectId: document.getElementById('projectId').value,
-                projectName: document.getElementById('projectName').value,
-                allocationStartDate: document.getElementById('allocationStartDate').value,
-                onshoreOffshore: document.getElementById('onshoreOffshore').value,
-                location: document.getElementById('location').value,
-                leaveDates: document.getElementById('leaveDates').value,
-                leaveType: document.getElementById('leaveType').value
-            };
+            const associateId = document.getElementById('associateId').value;
+            const associateName = document.getElementById('associateName').value;
 
-            // Validate form
-            let isValid = true;
-            Object.values(formData).forEach(value => {
-                if (!value) isValid = false;
-            });
-
-            if (!isValid) {
-                alert('Please fill all fields');
+            if (!associateId && !associateName) {
+                alert('Please enter Associate ID or Name');
                 return;
             }
 
-            // Generate attendance table
-            generateAttendanceTable(formData);
+            fetch(`/fetch-data?associateId=${associateId}&associateName=${associateName}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        // Populate form fields
+                        document.getElementById('associateId').value = data['Associate ID'];
+                        document.getElementById('associateId').readOnly = true; // Make ID read-only
+                        document.getElementById('associateName').value = data['Associate Name'];
+                        document.getElementById('status').value = data['Status'];
+                        document.getElementById('projectId').value = data['Project ID'];
+                        document.getElementById('projectName').value = data['Project Name'];
+                        document.getElementById('allocationStartDate').value = data['Allocation Start Date'];
+                        document.getElementById('onshoreOffshore').value = data['Onshore/Offshore'];
+                        document.getElementById('location').value = data['Location'];
+                    }
+                })
+                .catch(error => console.error('Error:', error));
         });
+        document.getElementById('submitBtn').addEventListener('click', function (event) {
+            event.preventDefault();
+            let isValid = true;
+            const fields = [
+                { field: document.getElementById('associateId'), errorId: 'associateIdError' },
+                { field: document.getElementById('associateName'), errorId: 'associateNameError' },
+                { field: document.getElementById('status'), errorId: 'statusError' },
+                { field: document.getElementById('projectId'), errorId: 'projectIdError' },
+                { field: document.getElementById('projectName'), errorId: 'projectNameError' },
+                { field: document.getElementById('allocationStartDate'), errorId: 'allocationStartDateError' },
+                { field: document.getElementById('onshoreOffshore'), errorId: 'onshoreOffshoreError' },
+                { field: document.getElementById('location'), errorId: 'locationError' },
+                { field: document.getElementById('leaveDates'), errorId: 'leaveDatesError' },
+                { field: document.getElementById('leaveType'), errorId: 'leaveTypeError' }
+            ];
 
-        function generateAttendanceTable(formData) {
-            const { allocationStartDate, leaveDates, status, leaveType } = formData;
-            const startDate = new Date(allocationStartDate);
-            const year = startDate.getFullYear();
-            const month = startDate.getMonth();
-            const leaveDatesArray = leaveDates.split(',').map(date => new Date(date.trim()));
-
-            // Get all dates in the month
-            const dates = [];
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            for (let day = 1; day <= daysInMonth; day++) {
-                dates.push(new Date(year, month, day));
-            }
-
-            // Create table
-            const table = document.createElement('table');
-            const headerRow = document.createElement('tr');
-            const dayRow = document.createElement('tr');
-            const dataRow = document.createElement('tr');
-
-            dates.forEach(date => {
-                // Header (Date)
-                const th = document.createElement('th');
-                th.textContent = `${date.getDate().toString().padStart(2, '0')}-${date.toLocaleString('default', { month: 'short' })}`;
-                headerRow.appendChild(th);
-
-                // Days (Weekday)
-                const tdDay = document.createElement('td');
-                tdDay.textContent = date.toLocaleString('default', { weekday: 'narrow' });
-                dayRow.appendChild(tdDay);
-
-                // Attendance Data
-                const td = document.createElement('td');
-                const isWeekend = [0, 6].includes(date.getDay()); // Sunday (0) or Saturday (6)
-                const isLeaveDate = leaveDatesArray.some(leaveDate => 
-                    leaveDate.getFullYear() === date.getFullYear() &&
-                    leaveDate.getMonth() === date.getMonth() &&
-                    leaveDate.getDate() === date.getDate()
-                );
-
-                if (isWeekend) {
-                    td.textContent = 'W';
-                    td.className = 'w';
-                } else if (isLeaveDate) {
-                    td.textContent = leaveType;
-                    td.className = 'pl';
+            fields.forEach(({ field, errorId }) => {
+                const errorMessage = document.getElementById(errorId);
+                if (!field.value) {
+                    field.classList.add('invalid');
+                    errorMessage.textContent = 'This field is required';
+                    isValid = false;
                 } else {
-                    td.textContent = status === 'Active' ? 'BLD' : 'UBL';
-                    td.className = status === 'Active' ? 'bld' : 'ubl';
+                    field.classList.remove('invalid');
+                    errorMessage.textContent = '';
                 }
-
-                dataRow.appendChild(td);
             });
 
-            // Assemble table
-            const thead = document.createElement('thead');
-            thead.appendChild(headerRow);
-            thead.appendChild(dayRow);
-            table.appendChild(thead);
-            table.appendChild(dataRow);
+            if (isValid) {
+                const formData = {
+                    associateId: document.getElementById('associateId').value,
+                    associateName: document.getElementById('associateName').value,
+                    status: document.getElementById('status').value,
+                    projectId: document.getElementById('projectId').value,
+                    projectName: document.getElementById('projectName').value,
+                    allocationStartDate: document.getElementById('allocationStartDate').value,
+                    onshoreOffshore: document.getElementById('onshoreOffshore').value,
+                    location: document.getElementById('location').value,
+                    leaveDates: document.getElementById('leaveDates').value,
+                    leaveType: document.getElementById('leaveType').value
+                };
 
-            // Update display
-            const container = document.getElementById('attendanceTable');
-            container.innerHTML = '';
-            container.appendChild(table);
-        }
+                fetch('/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(formData)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            alert('Form submitted successfully!');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+        });
+
+        flatpickr("#allocationStartDate", {
+            dateFormat: "Y-m-d"
+        });
+
+        flatpickr("#leaveDates", {
+            mode: "multiple",
+            dateFormat: "Y-m-d"
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const leaveDatesInput = document.getElementById('leaveDates');
+            const leaveDatesList = document.getElementById('leaveDatesList');
+
+            // Initialize flatpickr
+            flatpickr(leaveDatesInput, {
+                mode: "multiple",
+                dateFormat: "Y-m-d",
+                onChange: function (selectedDates, dateStr, instance) {
+                    updateLeaveDatesList(selectedDates);
+                }
+            });
+
+            function updateLeaveDatesList(dates) {
+                leaveDatesList.innerHTML = '';
+                dates.forEach(date => {
+                    const li = document.createElement('li');
+                    li.textContent = date.toISOString().split('T')[0];
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'Remove';
+                    removeButton.addEventListener('click', function () {
+                        removeDate(date);
+                    });
+                    li.appendChild(removeButton);
+                    leaveDatesList.appendChild(li);
+                });
+            }
+
+            function removeDate(dateToRemove) {
+                const dates = leaveDatesInput._flatpickr.selectedDates;
+                const index = dates.findIndex(date => date.getTime() === dateToRemove.getTime());
+                if (index !== -1) {
+                    dates.splice(index, 1);
+                    leaveDatesInput._flatpickr.setDate(dates);
+                    updateLeaveDatesList(dates);
+                }
+            }
+        });
+
     </script>
 </body>
 </html>
+
 const express = require('express');
 const bodyParser = require('body-parser');
-const ExcelJS = require('exceljs');
+const XLSX = require('xlsx');
 const fs = require('fs');
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
+
+
+// Serve static files (HTML, CSS, JS)
 app.use(express.static('public'));
 
-app.post('/submit', async (req, res) => {
-    const { associateName, associateId, status, projectId, projectName, allocationStartDate, onshoreOffshore, location, leaveDates, leaveType } = req.body;
+app.post('/submit', (req, res) => {
+    const {  associateName,associateId, status, projectId, projectName, allocationStartDate, onshoreOffshore, location, leaveDates, leaveType } = req.body;
 
     // Validate all required fields
-    if (!associateName || !associateId || !status || !projectId || !projectName || !allocationStartDate || !onshoreOffshore || !location || !leaveDates || !leaveType) {
+    if ( !associateName || !associateId ||!status || !projectId || !projectName || !allocationStartDate || !onshoreOffshore || !location || !leaveDates || !leaveType) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const filePath = 'attendance.xlsx';
-    const headers = ['Associate Name', 'Associate ID', 'Status', 'Project ID', 'Project Name', 'Allocation Start Date', 'Onshore/Offshore', 'Location', 'Leave Dates', 'Leave Type'];
+    const filePath = 'attandence.xlsx';
+    const headers = [ 'Associate Name', 'Associate ID','Status', 'Project ID', 'Project Name', 'Allocation Start Date', 'Onshore/Offshore', 'Location', 'Leave Dates', 'Leave Type'];
     let data = [];
 
-    const workbook = new ExcelJS.Workbook();
+    // Read existing data if the file exists
     if (fs.existsSync(filePath)) {
-        await workbook.xlsx.readFile(filePath);
-    } else {
-        const worksheet = workbook.addWorksheet('Sheet1');
-        worksheet.columns = headers.map(header => ({ header, key: header }));
+        const workbook = XLSX.readFile(filePath);
+        const worksheet = workbook.Sheets['Sheet1'];
+        data = XLSX.utils.sheet_to_json(worksheet);
     }
-
-    const worksheet = workbook.getWorksheet('Sheet1');
-    data = worksheet.getSheetValues().slice(1).map(row => {
-        return headers.reduce((acc, header, index) => {
-            acc[header] = row[index + 1];
-            return acc;
-        }, {});
-    });
 
     // Check if the Associate ID already exists
     const existingIndex = data.findIndex(row => row['Associate ID'] === associateId);
@@ -282,13 +487,40 @@ app.post('/submit', async (req, res) => {
 
     // Update or add the new row
     if (existingIndex !== -1) {
-        worksheet.getRow(existingIndex + 2).values = Object.values(newRow);
+        data[existingIndex] = newRow;
     } else {
-        worksheet.addRow(newRow);
+        data.push(newRow);
     }
 
-    await workbook.xlsx.writeFile(filePath);
+    // Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    XLSX.writeFile(workbook, filePath);
+
     res.json({ message: 'Data saved successfully!' });
+});
+
+app.get('/fetch-data', (req, res) => {
+    const { associateId, associateName } = req.query;
+
+    const filePath = 'attandence.xlsx';
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'File not found' });
+    }
+
+    const workbook = XLSX.readFile(filePath);
+    const worksheet = workbook.Sheets['Sheet1'];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    // Find by Associate ID or Name
+    const record = data.find(row => 
+        row['Associate ID'] === associateId || 
+        row['Associate Name'] === associateName
+    );
+
+    if (!record) return res.status(404).json({ error: 'Record not found' });
+    res.json(record);
 });
 
 app.listen(3000, () => console.log('Server running on port 3000'));
