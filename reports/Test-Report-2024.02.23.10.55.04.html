@@ -1,47 +1,56 @@
-const Excel = require('exceljs');
-const moment = require('moment');
-const fs = require('fs');
+const ExcelJS = require('exceljs');
 
-const excelFilePath = './output.xlsx';
+async function createAllocationSheet(year) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Allocations');
 
-async function createExcelFile() {
-    const workbook = new Excel.Workbook();
-    const worksheet = workbook.addWorksheet('Attendance');
-
-    // Fixed headers for first row
-    const headers = [
-        'Associate Name', 'Associate ID', 'Status', 'Project ID', 'Project Name', 
-        'Allocation', 'Start Date', 'Onshore/Offshore', 'Location'
+    // Initial headers (first part of the header row)
+    const initialHeaders = [
+        'Associate Name',
+        'Associate ID',
+        'Status',
+        'Project ID',
+        'Project Name',
+        'Allocation Start Date',
+        'Onshore/Offshore',
+        'Location'
     ];
 
-    // Generate the full date range for the year (January 1st to December 31st)
-    const dates = getYearDates(moment().year());
+    // Generate dates and days for the entire year in UTC
+    const datesFormatted = [];
+    const daysFormatted = [];
+    let currentDate = new Date(Date.UTC(year, 0, 1)); // Start from Jan 1 of the given year
 
-    // Add headers to the first row
-    worksheet.addRow(headers.concat(dates));
-
-    // Add days of the week to the second row
-    const daysOfWeek = dates.map(date => moment(date, 'DD-MMM-YYYY').format('ddd'));
-    worksheet.addRow([''].concat(daysOfWeek));
-
-    // Write the workbook to a file
-    await workbook.xlsx.writeFile(excelFilePath);
-    console.log('Excel file created with headers and day names');
-}
-
-function getYearDates(year) {
-    const startDate = moment(`${year}-01-01`);
-    const endDate = moment(`${year}-12-31`);
-    const dates = [];
-
-    let currentDate = startDate;
-    while (currentDate.isSameOrBefore(endDate)) {
-        dates.push(currentDate.format('DD-MMM-YYYY')); // Format as DD-MMM-YYYY
-        currentDate.add(1, 'day');
+    while (currentDate.getUTCFullYear() === year) {
+        datesFormatted.push(formatDate(currentDate));
+        daysFormatted.push(formatDay(currentDate));
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
-    return dates;
+
+    // Create first header row: initial headers + dates
+    worksheet.addRow([...initialHeaders, ...datesFormatted]);
+
+    // Create second header row: empty strings for initial headers + days
+    const secondRow = new Array(initialHeaders.length).fill('').concat(daysFormatted);
+    worksheet.addRow(secondRow);
+
+    // Save the workbook
+    await workbook.xlsx.writeFile('Yearly_Allocations.xlsx');
+    console.log('Excel file created successfully.');
 }
 
-if (!fs.existsSync(excelFilePath)) {
-    createExcelFile();
+// Helper function to format date as 'DD-MMM'
+function formatDate(date) {
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${day}-${months[date.getUTCMonth()]}`;
 }
+
+// Helper function to get day abbreviation (e.g., 'Mon')
+function formatDay(date) {
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    return days[date.getUTCDay()];
+}
+
+// Example usage: create for the year 2024
+createAllocationSheet(2024).catch(console.error);
