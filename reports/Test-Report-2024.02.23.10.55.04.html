@@ -1,154 +1,134 @@
-document.getElementById('submitBtn').addEventListener('click', function (event) {
-    event.preventDefault();
-    let isValid = true;
-    const fields = [
-        { field: document.getElementById('associateId'), errorId: 'associateIdError' },
-        { field: document.getElementById('associateName'), errorId: 'associateNameError' },
-        { field: document.getElementById('status'), errorId: 'statusError' },
-        { field: document.getElementById('projectId'), errorId: 'projectIdError' },
-        { field: document.getElementById('projectName'), errorId: 'projectNameError' },
-        { field: document.getElementById('allocationStartDate'), errorId: 'allocationStartDateError' },
-        { field: document.getElementById('onshoreOffshore'), errorId: 'onshoreOffshoreError' },
-        { field: document.getElementById('location'), errorId: 'locationError' },
-        { field: document.getElementById('leaveDates'), errorId: 'leaveDatesError' },
-        { field: document.getElementById('leaveType'), errorId: 'leaveTypeError' }
-    ];
-
-    fields.forEach(({ field, errorId }) => {
-        const errorMessage = document.getElementById(errorId);
-        if (!field.value) {
-            field.classList.add('invalid');
-            errorMessage.textContent = 'This field is required';
-            isValid = false;
-        } else {
-            field.classList.remove('invalid');
-            errorMessage.textContent = '';
-        }
-    });
-
-    if (isValid) {
-        const formData = {
-            associateId: document.getElementById('associateId').value,
-            associateName: document.getElementById('associateName').value,
-            status: document.getElementById('status').value,
-            projectId: document.getElementById('projectId').value,
-            projectName: document.getElementById('projectName').value,
-            allocationStartDate: document.getElementById('allocationStartDate').value,
-            onshoreOffshore: document.getElementById('onshoreOffshore').value,
-            location: document.getElementById('location').value,
-            leaveDates: document.getElementById('leaveDates').value,
-            leaveType: document.getElementById('leaveType').value
-        };
-
-        fetch('/submit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams(formData)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                } else {
-                    alert('Form submitted successfully!');
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
-});
-
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const XLSX = require('xlsx');
 const fs = require('fs');
-const moment = require('moment');
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static files (HTML, CSS, JS)
-app.use(express.static('public'));
+// Generate date headers for current month
+function getDateHeaders() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => {
+        const date = new Date(year, month, i + 1);
+        return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).replace(/ /g, '-');
+    });
+}
 
 app.post('/submit', (req, res) => {
-    const { associateName, associateId, status, projectId, projectName, allocationStartDate, onshoreOffshore, location, leaveDates, leaveType } = req.body;
+    const formData = req.body;
+    const filePath = 'attendance.xlsx';
 
-    // Validate all required fields
-    if (!associateName || !associateId || !status || !projectId || !projectName || !allocationStartDate || !onshoreOffshore || !location || !leaveDates || !leaveType) {
+    // Validate required fields
+    const requiredFields = ['associateName', 'associateId', 'status', 'projectId', 
+                           'projectName', 'allocationStartDate', 'onshoreOffshore', 
+                           'location', 'leaveDates', 'leaveType'];
+    if (requiredFields.some(field => !formData[field])) {
         return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const filePath = 'attendance.xlsx';
-    const headers = ['Associate Name', 'Associate ID', 'Status', 'Project ID', 'Project Name', 'Allocation Start Date', 'Onshore/Offshore', 'Location', 'Leave Dates', 'Leave Type'];
+    // Process leave dates
+    const currentDateHeaders = getDateHeaders();
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    const leaveDates = formData.leaveDates.split(',').map(dateStr => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).replace(/ /g, '-');
+        }
+        return null;
+    }).filter(d => d !== null);
+
+    // Prepare new row data
+    const defaultStatus = formData.status === 'Active' ? 'BLD' : 'UBL';
+    const dateColumns = {};
+    currentDateHeaders.forEach(header => {
+        dateColumns[header] = leaveDates.includes(header) ? formData.leaveType : defaultStatus;
+    });
+
+    const newRow = {
+        'Associate Name': formData.associateName,
+        'Associate ID': formData.associateId,
+        'Status': formData.status,
+        'Project ID': formData.projectId,
+        'Project Name': formData.projectName,
+        'Allocation Start Date': formData.allocationStartDate,
+        'Onshore/Offshore': formData.onshoreOffshore,
+        'Location': formData.location,
+        ...dateColumns
+    };
+
+    // Read and update existing data
     let data = [];
-
-    // Generate dates and days for the current month
-    const currentMonth = moment().format('MMMM YYYY'); // Current month, e.g., "February 2025"
-    const startOfMonth = moment().startOf('month');
-    const endOfMonth = moment().endOf('month');
-    const daysInMonth = [];
-
-    for (let day = startOfMonth; day.isBefore(endOfMonth); day.add(1, 'days')) {
-        daysInMonth.push({
-            date: day.format('DD-MMM'),
-            dayOfWeek: day.format('ddd')
-        });
-    }
-
-    // Read existing data if the file exists
     if (fs.existsSync(filePath)) {
         const workbook = XLSX.readFile(filePath);
         const worksheet = workbook.Sheets['Sheet1'];
         data = XLSX.utils.sheet_to_json(worksheet);
+
+        // Update existing rows to current date format
+        data = data.map(row => {
+            const rowStatus = row['Status'] || 'Active';
+            const rowDefault = rowStatus === 'Active' ? 'BLD' : 'UBL';
+            
+            const updatedRow = {
+                ...row,
+                ...currentDateHeaders.reduce((acc, header) => {
+                    acc[header] = row[header] || rowDefault;
+                    return acc;
+                }, {})
+            };
+            
+            // Remove old date columns
+            Object.keys(updatedRow).forEach(key => {
+                if (![...requiredFields.map(f => f.replace(/([A-Z])/g, ' $1').trim()), ...currentDateHeaders].includes(key)) {
+                    delete updatedRow[key];
+                }
+            });
+            
+            return updatedRow;
+        });
     }
 
-    // Check if the Associate ID already exists
-    const existingIndex = data.findIndex(row => row['Associate ID'] === associateId);
-
-    // Prepare the new row data
-    const newRow = {
-        'Associate Name': associateName,
-        'Associate ID': associateId,
-        'Status': status,
-        'Project ID': projectId,
-        'Project Name': projectName,
-        'Allocation Start Date': allocationStartDate,
-        'Onshore/Offshore': onshoreOffshore,
-        'Location': location,
-        'Leave Dates': leaveDates,
-        'Leave Type': leaveType
-    };
-
-    // Generate leave data
-    const leaveDatesArray = leaveDates.split(',').map(date => moment(date.trim(), 'YYYY-MM-DD').format('DD-MMM'));
-    const leaveMap = new Set(leaveDatesArray);
-
-    const monthStatus = daysInMonth.map(day => {
-        if (leaveMap.has(day.date)) {
-            return leaveType;  // Apply leave type to the specific leave days
-        }
-        return status === 'Active' ? 'BLD' : status;  // Default status (BLD or UBL)
-    });
-
-    // Append the status data to the newRow
-    newRow['Leave Data'] = monthStatus.join(', ');
-
-    // Update or add the new row
+    // Update or add new entry
+    const existingIndex = data.findIndex(row => row['Associate ID'] === formData.associateId);
     if (existingIndex !== -1) {
         data[existingIndex] = newRow;
     } else {
         data.push(newRow);
     }
 
-    // Create a new workbook and worksheet
+    // Create new workbook
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+    const worksheet = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
     XLSX.writeFile(workbook, filePath);
 
     res.json({ message: 'Data saved successfully!' });
 });
 
+app.get('/fetch-data', (req, res) => {
+    // ... existing fetch-data implementation ...
+});
+
 app.listen(3000, () => console.log('Server running on port 3000'));
+
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr("#allocationStartDate", { dateFormat: "Y-m-d" });
+    
+    const leavePicker = flatpickr("#leaveDates", {
+        mode: "multiple",
+        dateFormat: "Y-m-d",
+        onChange: function(selectedDates) {
+            const formattedDates = selectedDates.map(date => 
+                date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                    .replace(/ /g, '-')
+            );
+            document.getElementById('leaveDates').value = formattedDates.join(',');
+        }
+    });
+});
