@@ -1,77 +1,836 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background: #F4E4F1;
+            color: #333;
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 1200px;
+            margin: auto;
+            background: #D08CC5;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            padding: 8px;
+            border: 2px solid #ed97de;
+            border-radius: 5px;
+            font-size: 12px;
+            background: #f9f9f9;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .invalid {
+            border-color: red;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .button-container {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: center;
+            gap: 100px;
+            margin-top: 20px;
+        }
+
+        .button-container button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .button-container button:hover {
+            background: #2980b9;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Employee Information Form</h2>
+    <div class="form-container">
+        <div class="form-group">
+            <label for="esaProjectId">Project ID:</label>
+            <select id="esaProjectId" name="esaProjectId">
+                <option value="">Select Project ID</option>
+                <option value="1000413943">1000413943</option>
+                <option value="1000413944">1000413944</option>
+                <option value="1000123764">1000123764</option>
+                <option value="1000279013">1000279013</option>
+                <option value="1000325939">1000325939</option>
+                <option value="1000433887">1000433887</option>
+                <option value="1000419942">1000419942</option>
+                <option value="1000325940">1000325940</option>
+            </select>
+            <div class="error-message" id="projectIdError"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="esaProjectName">Project Name:</label>
+            <select id="esaProjectName" name="esaProjectName">
+                <option value="">Select Project Name</option>
+                <option value="Ally IPRM">Ally IPRM</option>
+                <option value="Auto & Ins. Product Delivery">Auto & Ins. Product Delivery</option>
+                <option value="Engg. Technology Operations">Engg. Technology Operations</option>
+                <option value="CCBT - Performance Testing">CCBT - Performance Testing</option>
+                <option value="Ally Corporate Technology">Ally Corporate Technology</option>
+                <option value="Ally Fi-SmartCash MF Batch Mod">Ally Fi-SmartCash MF Batch Mod</option>
+                <option value="Ally Webtools Data Migration">Ally Webtools Data Migration</option>
+                <option value="Ally CCBT">Ally CCBT</option>
+            </select>
+            <div class="error-message" id="projectNameError"></div>
+        </div>
+        <div class="form-group">
+            <label for="associateId">Associate ID:</label>
+            <input type="number" id="associateId" placeholder="416572" required>
+            <div class="error-message" id="associateIdError"></div>
+        </div>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" placeholder="Srinivasa Rajagopalan,Maheswaran" required>
+            <div class="error-message" id="nameError"></div>
+        </div>
+        <div class="form-group">
+            <label for="designation">Designation:</label>
+            <select id="designation" required>
+                <option value="">Select Designation</option>
+                <option value="M">M</option>
+                <option value="SA">SA</option>
+                <option value="Sr. Dir.">Sr. Dir.</option>
+                <option value="A">A</option>
+                <option value="PAT">PAT</option>
+                <option value="PA">PA</option>
+                <option value="SM">SM</option>
+                <option value="AD">AD</option>
+                <option value="STA">STA</option>
+                <option value="TA">TA</option>
+                <option value="Cont">Cont</option>
+                <option value="P">P</option>
+            </select>
+            <div class="error-message" id="designationError"></div>
+        </div>
+        <div class="form-group">
+            <label for="location">Location:</label>
+            <select id="location" required>
+                <option value="">Select Location</option>
+                <option value="United States">United States</option>
+                <option value="Bangalore">Bangalore</option>
+                <option value="Pune">Pune</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Kolkata">Kolkata</option>
+                <option value="Hyderabad">Hyderabad</option>
+            </select>
+            <div class="error-message" id="locationError"></div>
+        </div>
+        <div class="form-group">
+            <label for="onOff">On/Off:</label>
+            <select id="onOff" required>
+                <option value="">Select On/Off</option>
+                <option value="On">On</option>
+                <option value="Off">Off</option>
+            </select>
+            <div class="error-message" id="onOffError"></div>
+        </div>
+        <div class="form-group">
+            <label for="billable">Billable:</label>
+            <select id="billable" required>
+                <option value="">Select Billable</option>
+                <option value="BTM">BTM</option>
+                <option value="NBL">NBL</option>
+                <option value="BFD">BFD</option>
+                <option value="NBL - Not tagged to project">NBL - Not tagged to project</option>
+            </select>
+            <div class="error-message" id="billableError"></div>
+        </div>
+        <div class="form-group">
+            <label for="allocationStartDate">Allocation Start Date:</label>
+            <input type="date" id="allocationStartDate" required>
+            <div class="error-message" id="allocationStartDateError"></div>
+        </div>
+        <div class="form-group">
+            <label for="billingStartDate">Billing Start Date:</label>
+            <input type="date" id="billingStartDate" required>
+            <div class="error-message" id="billingStartDateError"></div>
+        </div>
+        <div class="form-group">
+            <label for="allocationEndDate">Allocation End Date:</label>
+            <input type="date" id="allocationEndDate" required>
+            <div class="error-message" id="allocationEndDateError"></div>
+        </div>
+        <div class="form-group">
+            <label for="billingEndDate">Billing End Date:</label>
+            <input type="date" id="billingEndDate" required>
+            <div class="error-message" id="billingEndDateError"></div>
+        </div>
+        <div class="form-group">
+            <label for="billingRate">Billing Rate ($):</label>
+            <input type="number" id="billingRate" placeholder="N/A" required>
+            <div class="error-message" id="billingRateError"></div>
+        </div>
+        <div class="form-group">
+            <label for="department">Department:</label>
+            <select id="department" required>
+                <option value="QEA BFS">QEA BFS</option>
+                <option value="QEA EPS BPM">QEA EPS BPM</option>
+                <option value="QEA NFT">QEA NFT</option>
+                <option value="QEA EPS CRM">QEA EPS CRM</option>
+                <option value="QEA Architect">QEA Architect</option>
+            </select>
+            <div class="error-message" id="departmentError"></div>
+        </div>
+        <div class="form-group">
+            <label for="homeManagerId">Home Manager ID:</label>
+            <input type="number" id="homeManagerId" placeholder="586451" required>
+            <div class="error-message" id="homeManagerIdError"></div>
+        </div>
+        <div class="form-group">
+            <label for="homeManagerName">Home Manager Name:</label>
+            <input type="text" id="homeManagerName" placeholder="Hiremath, Rajashekhar" required>
+            <div class="error-message" id="homeManagerNameError"></div>
+        </div>
+        <div class="form-group">
+            <label for="projectPoc">Project POC:</label>
+            <select id="projectPoc" required>
+                <option value="">Select Y/N</option>
+                <option value="Y">Y</option>
+                <option value="N">N</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <select id="status" required>
+                <option value="">Select Status</option>
+                <option value="Historic">Historic</option>
+                <option value="Current">Current</option>
+            </select>
+            <div class="error-message" id="statusError"></div>
+        </div>
+        <div class="form-group">
+            <label for="requisitionSowContractNumber">Requisition/SOW Contract Number:</label>
+            <input type="text" id="requisitionSowContractNumber" placeholder="ALLY-REQ-015172" required>
+            <div class="error-message" id="requisitionSowContractNumberError"></div>
+        </div>
+        <div class="form-group">
+            <label for="zId">Z-ID:</label>
+            <input type="text" id="zId" placeholder="WZ61TR" required>
+            <div class="error-message" id="zIdError"></div>
+        </div>
+        <div class="form-group">
+            <label for="allyTrack">Ally Track:</label>
+            <select id="allyTrack" required>
+                <option value="CCBT Performance">CCBT Performance</option>
+                <option value="CARRS">CARRS</option>
+                <option value="Collections and Recovery">Collections and Recovery</option>
+                <option value="SmartAuction">SmartAuction</option>
+                <option value="AML">AML</option>
+                <option value="Web Tools">Web Tools</option>
+                <option value="SmartCash">SmartCash</option>
+                <option value="Consumer Credit & Originations">Consumer Credit & Originations</option>
+                <option value="Advantage Retail">Advantage Retail</option>
+                <option value="Ally Bank">Ally Bank</option>
+                <option value="Advantage Commercial">Advantage Commercial</option>
+                <option value="Debit Card 2.0">Debit Card 2.0</option>
+                <option value="IVR SFDC CRM Applications">IVR SFDC CRM Applications</option>
+                <option value="Mortgage POD">Mortgage POD</option>
+                <option value="Ally Dealership Insurance">Ally Dealership Insurance</option>
+                <option value="PnC Insurance">PnC Insurance</option>
+                <option value="IWarranty">IWarranty</option>
+                <option value="Corporate Finance">Corporate Finance</option>
+                <option value="CCBT ETO Applications">CCBT ETO Applications</option>
+                <option value="IPRM">IPRM</option>
+                <option value="Vehicle Protection Center">Vehicle Protection Center</option>
+            </select>
+            <div class="error-message" id="allyTrackError"></div>
+        </div>
+        <div class="form-group">
+            <label for="subTrack">Sub Track:</label>
+            <select id="subTrack" required>
+                <option value="CARRS">CARRS</option>
+                <option value="Collections and Recovery">Collections and Recovery</option>
+                <option value="#N/A">#N/A</option>
+                <option value="SmartAuction 2022">SmartAuction 2022</option>
+                <option value="Compliance-Fraud CMX">Compliance-Fraud CMX</option>
+                <option value="Web Tools">Web Tools</option>
+                <option value="2022 SmartCash Agile Program">2022 SmartCash Agile Program</option>
+                <option value="Savings Strategy">Savings Strategy</option>
+                <option value="Consumer Credit & Originations - Common Services">Consumer Credit & Originations - Common
+                    Services</option>
+                <option value="AML - FACT NFT">AML - FACT NFT</option>
+                <option value="Smart Auction">Smart Auction</option>
+                <option value="Consumer Servicing">Consumer Servicing</option>
+                <option value="Payments">Payments</option>
+                <option value="Advantage Commercial">Advantage Commercial</option>
+                <option value="Debit Card 2.0">Debit Card 2.0</option>
+                <option value="C3 Auto">C3 Auto</option>
+                <option value="Smart Cash Modernization">Smart Cash Modernization</option>
+                <option value="Mortgage POD">Mortgage POD</option>
+                <option value="Ally Dealership Insurance">Ally Dealership Insurance</option>
+                <option value="Dealer CRM Salesforce Release">Dealer CRM Salesforce Release</option>
+                <option value="Insurance F&I - Money Makers">Insurance F&I - Money Makers</option>
+                <option value="Deposit Products">Deposit Products</option>
+                <option value="Advantage Retail Perf Test">Advantage Retail Perf Test</option>
+                <option value="CFG Sustain">CFG Sustain</option>
+                <option value="FACT.ai">FACT.ai</option>
+                <option value="GPMO Support">GPMO Support</option>
+                <option value="Account Opening">Account Opening</option>
+                <option value="GPMO Support - LR Cloud Support">GPMO Support - LR Cloud Support</option>
+                <option value="Insurance F&I - Proclaimers">Insurance F&I - Proclaimers</option>
+                <option value="Smart Auction - Onsite">Smart Auction - Onsite</option>
+                <option value="AML RPA">AML RPA</option>
+                <option value="FACT.ai / AML - CMT">FACT.ai / AML - CMT</option>
+                <option value="CIAM">CIAM</option>
+                <option value="Collections and Recovery - SHAW Perf test">Collections and Recovery - SHAW Perf test
+                </option>
+                <option value="AAOS Servicing & Collections - DPS Insurance">AAOS Servicing & Collections - DPS
+                    Insurance</option>
+                <option value="2022 CARRS - Audit Intelligence">2022 CARRS - Audit Intelligence</option>
+                <option value="AML - FACT">AML - FACT</option>
+                <option value="Insurance F&I - Modernization Squad">Insurance F&I - Modernization Squad</option>
+                <option value="INS , Property & Casualty">INS , Property & Casualty</option>
+                <option value="Vehicle Protection Center">Vehicle Protection Center</option>
+                <option value="Corporate Finance POD 2022">Corporate Finance POD 2022</option>
+                <option value="Workforce Identity and Access Management">Workforce Identity and Access Management
+                </option>
+            </select>
+            <div class="error-message" id="subTrackError"></div>
+        </div>
+        <div class="form-group">
+            <label for="integratedProject">Integrated Project:</label>
+            <select id="integratedProject">
+                <option value="">Select Integrated Project</option>
+                <option value="Y">Yes</option>
+                <option value="N">No</option>
+            </select>
+            <div class="error-message" id="integratedProjectError"></div>
+        </div>
+        <div class="form-group">
+            <label for="onsiteOnlyProject">Onsite Only Project:</label>
+            <select id="onsiteOnlyProject">
+                <option value="">Select Onsite Only Project</option>
+                <option value="Y">Yes</option>
+                <option value="N">No</option>
+            </select>
+            <div class="error-message" id="onsiteOnlyProjectError"></div>
+        </div>
+        <div class="form-group">
+            <label for="offshoreOnlyProject">Offshore Only Project:</label>
+            <select id="offshoreOnlyProject">
+                <option value="">Select Offshore Only Project</option>
+                <option value="Y">Yes</option>
+                <option value="N">No</option>
+            </select>
+            <div class="error-message" id="offshoreOnlyProjectError"></div>
+        </div>
+        <div class="form-group">
+            <label for="onsiteOffshoreProject">Onsite + Offshore Project:</label>
+            <select id="onsiteOffshoreProject">
+                <option value="">Select Onsite + Offshore Project</option>
+                <option value="Y">Yes</option>
+                <option value="N">No</option>
+            </select>
+            <div class="error-message" id="onsiteOffshoreProjectError"></div>
+        </div>
+        <div class="form-group">
+            <label for="engagementManager">Engagement Manager:</label>
+            <select id="engagementManager" required>
+                <option value="Bahr, Richard A.">Bahr, Richard A.</option>
+                <option value="Walden, Kelly">Walden, Kelly</option>
+                <option value="#N/A">#N/A</option>
+                <option value="Sundaram, Elangovan">Sundaram, Elangovan</option>
+                <option value="Jha, Indu">Jha, Indu</option>
+                <option value="B, Aradhya">B, Aradhya</option>
+                <option value="Wolfe, Tami">Wolfe, Tami</option>
+                <option value="Shonka, Julia">Shonka, Julia</option>
+                <option value="Glass, Brian">Glass, Brian</option>
+                <option value="Waits, Todd">Waits, Todd</option>
+                <option value="Subramanian, Ramaraj">Subramanian, Ramaraj</option>
+                <option value="Bukeyeva, Dayana">Bukeyeva, Dayana</option>
+                <option value="Sheets, David">Sheets, David</option>
+                <option value="Coleman, Sean">Coleman, Sean</option>
+                <option value="Gupta, Shweta">Gupta, Shweta</option>
+                <option value="Ross, Andrew">Ross, Andrew</option>
+                <option value="TBD">TBD</option>
+                <option value="Soline Selvane, Sudarsanam">Soline Selvane, Sudarsanam</option>
+                <option value="Vinod, Sandeep">Vinod, Sandeep</option>
+                <option value="Kumar, Ruchi">Kumar, Ruchi</option>
+                <option value="Trevino, Arturo">Trevino, Arturo</option>
+                <option value="Synenko, Kateryna">Synenko, Kateryna</option>
+                <option value="Kanadkhedkar, Shirish">Kanadkhedkar, Shirish</option>
+                <option value="Diaz, Gabriel">Diaz, Gabriel</option>
+                <option value="Navamani, Priya">Navamani, Priya</option>
+                <option value="Galea, Joseph">Galea, Joseph</option>
+                <option value="Patel, Divyesh">Patel, Divyesh</option>
+                <option value="Elledge, Marissa">Elledge, Marissa</option>
+                <option value="Choudhary, Jay">Choudhary, Jay</option>
+                <option value="Kasula, Veena">Kasula, Veena</option>
+                <option value="Applegate, Eric">Applegate, Eric</option>
+                <option value="Mesaeh, Christopher">Mesaeh, Christopher</option>
+            </select>
+            <div class="error-message" id="engagementManagerError"></div>
+        </div>
+        <div class="form-group">
+            <label for="alternateEngagementManager">Alternate Engagement Manager:</label>
+            <select id="alternateEngagementManager" required>
+                <option value="Zuendel, Andy">Zuendel, Andy</option>
+                <option value="Barga, Tami">Barga, Tami</option>
+                <option value="#N/A">#N/A</option>
+                <option value="Gage, Matthew">Gage, Matthew</option>
+                <option value="Barbour, Bill">Barbour, Bill</option>
+                <option value="Gosnell, Todd">Gosnell, Todd</option>
+                <option value="Mesaeh, Christopher">Mesaeh, Christopher</option>
+                <option value="Hempel, David">Hempel, David</option>
+                <option value="Subbiah, Subash">Subbiah, Subash</option>
+                <option value="Nixon, Andrea">Nixon, Andrea</option>
+                <option value="Draper, Rick">Draper, Rick</option>
+                <option value="Weaver, Cindy">Weaver, Cindy</option>
+                <option value="Rosky, Samantha">Rosky, Samantha</option>
+                <option value="Luptak, Anna">Luptak, Anna</option>
+                <option value="Fulton, Robyn">Fulton, Robyn</option>
+                <option value="TBD">TBD</option>
+                <option value="Riddle, Kevin">Riddle, Kevin</option>
+                <option value="La Rose, Brian">La Rose, Brian</option>
+                <option value="Achappa, Manju">Achappa, Manju</option>
+                <option value="Sparago, Evan">Sparago, Evan</option>
+                <option value="Sonowski, Troy">Sonowski, Troy</option>
+                <option value="Pouliot, Courtney">Pouliot, Courtney</option>
+                <option value="Ross, Andrew">Ross, Andrew</option>
+                <option value="Adams, Thomas">Adams, Thomas</option>
+                <option value="Waits, Todd">Waits, Todd</option>
+                <option value="Watson, Tim">Watson, Tim</option>
+                <option value="Kapoor, Shveta">Kapoor, Shveta</option>
+                <option value="Subramanian, Sriram">Subramanian, Sriram</option>
+                <option value="Gruenberg, Jessica">Gruenberg, Jessica</option>
+                <option value="Trevino, Arturo">Trevino, Arturo</option>
+                <option value="Coleman, Sean">Coleman, Sean</option>
+            </select>
+            <div class="error-message" id="alternateEngagementManagerError"></div>
+        </div>
+        <div class="form-group">
+            <label for="director">Director:</label>
+            <select id="director" required>
+                <option value="Subramanian, Sriram">Subramanian, Sriram</option>
+                <option value="Sparago, Evan">Sparago, Evan</option>
+                <option value="#N/A">#N/A</option>
+                <option value="Diaz, Gabriel">Diaz, Gabriel</option>
+                <option value="Da Silva, Alex">Da Silva, Alex</option>
+                <option value="Fulton, Robyn">Fulton, Robyn</option>
+                <option value="Gosnell, Todd">Gosnell, Todd</option>
+                <option value="Glass, Brian">Glass, Brian</option>
+                <option value="Waits, Todd">Waits, Todd</option>
+                <option value="Coggins, Joshua">Coggins, Joshua</option>
+                <option value="Coleman, Sean">Coleman, Sean</option>
+                <option value="Dafforn, Manju">Dafforn, Manju</option>
+                <option value="Luptak, Anna">Luptak, Anna</option>
+                <option value="Patil, Chandrashekar">Patil, Chandrashekar</option>
+                <option value="TBD">TBD</option>
+                <option value="De Tomas, Hector">De Tomas, Hector</option>
+                <option value="Kumar, Ruchi">Kumar, Ruchi</option>
+                <option value="Zuendel, Andy">Zuendel, Andy</option>
+                <option value="Galea, Joseph">Galea, Joseph</option>
+                <option value="Kothur, Ramakrishna">Kothur, Ramakrishna</option>
+                <option value="Bzdok, Carey">Bzdok, Carey</option>
+                <option value="Choudhary, Jay">Choudhary, Jay</option>
+            </select>
+            <div class="error-message" id="directorError"></div>
+        </div>
+        <div class="form-group">
+            <label for="execLead">Exec Lead:</label>
+            <select id="execLead" required>
+                <option value="Hazime, Bassem">Hazime, Bassem</option>
+                <option value="#N/A">#N/A</option>
+                <option value="Ellis, Geoff">Ellis, Geoff</option>
+                <option value="La Rose, Brian">La Rose, Brian</option>
+                <option value="Hempel, David">Hempel, David</option>
+                <option value="Powell, Jason">Powell, Jason</option>
+                <option value="Weeks, Scott">Weeks, Scott</option>
+                <option value="Smith, Christopher">Smith, Christopher</option>
+                <option value="Jones, Matt">Jones, Matt</option>
+                <option value="TBD">TBD</option>
+                <option value="Baklavas, Jason">Baklavas, Jason</option>
+                <option value="Dodge, Ron">Dodge, Ron</option>
+                <option value="Rajagopalan, Sada">Rajagopalan, Sada</option>
+                <option value="Cannon, Robert">Cannon, Robert</option>
+            </select>
+            <div class="error-message" id="execLeadError"></div>
+        </div>
+        <div class="form-group">
+            <label for="allyCio">Ally CIO:</label>
+            <select id="allyCio" required>
+                <option value="Rinaldo, Pat">Rinaldo, Pat</option>
+                <option value="#N/A">#N/A</option>
+                <option value="Rajasekaran, Arvy">Rajasekaran, Arvy</option>
+                <option value="Nans Sivaram">Nans Sivaram</option>
+                <option value="TBD">TBD</option>
+                <option value="Cremers, Spencer">Cremers, Spencer</option>
+                <option value="Hart, Donna">Hart, Donna</option>
+            </select>
+            <div class="error-message" id="allyCioError"></div>
+        </div>
+        <div class="form-group">
+            <label for="lob">LoB:</label>
+            <select id="lob" required>
+                <option value="Auto and Insurance Product Delivery">Auto and Insurance Product Delivery</option>
+                <option value="#N/A">#N/A</option>
+                <option value="Enterprise Architecture and Solution Engineering">Enterprise Architecture and Solution
+                    Engineering</option>
+                <option value="Banking Invest Lending Digital Technology">Banking Invest Lending Digital Technology
+                </option>
+                <option value="Enterprise Technology Operations">Enterprise Technology Operations</option>
+                <option value="Information Protection and Risk Management">Information Protection and Risk Management
+                </option>
+            </select>
+            <div class="error-message" id="lobError"></div>
+        </div>
+        <div class="form-group">
+            <label for="allyMailId">Ally Mail ID:</label>
+            <input type="email" id="allyMailId" placeholder="Maheswaran.SrinivasaRajagopalan@Ally.com" required>
+            <div class="error-message" id="allyMailIdError"></div>
+        </div>
+        <div class="form-group">
+            <label for="cognizantEmailId">Cognizant Email ID:</label>
+            <input type="email" id="cognizantEmailId" placeholder="Maheswaran.SrinivasaRajagopalan@cognizant.com"
+                required>
+            <div class="error-message" id="cognizantEmailIdError"></div>
+        </div>
+    </div>
+    <div class="button-container">
+        <button id="editBtn">Edit Record</button>
+        <button id="newRecordBtn">New Record</button>
+        <button id="submitBtn">Submit</button>
+    </div>
+
+    <script>
+        document.getElementById("submitBtn").addEventListener("click", async () => {
+            if (validateForm()) {
+                const data = collectFormData();
+                try {
+                    alert("New record added successfully!");
+                    clearForm(); // Ensure the form is cleared after adding a new record
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert("Failed to add new record. Please try again.");
+                }
+            } else {
+                alert("Please correct the highlighted fields.");
+            }
+        });
+
+        document.getElementById("editBtn").addEventListener("click", async () => {
+            const associateId = document.getElementById("associateId").value;
+            const name = document.getElementById("name").value;
+            try {
+                await Excel.run(async (context) => {
+                    const sheet = context.workbook.worksheets.getActiveWorksheet();
+                    const table = sheet.tables.getItem("EmployeeTable");
+                    const rows = table.rows.load("values");
+
+                    await context.sync();
+
+                    const matchingRows = rows.items.filter(row => row.values[0][2] === associateId || row.values[0][3] === name);
+                    if (matchingRows.length > 1) {
+                        // Prompt user to select a specific record
+                        const selectedIndex = prompt("Multiple records found. Enter the index of the record to edit (0-based):");
+                        if (selectedIndex !== null && selectedIndex >= 0 && selectedIndex < matchingRows.length) {
+                            const data = matchingRows[selectedIndex].values[0];
+                            populateFormData(data);
+                            alert("Record loaded successfully!");
+                        } else {
+                            alert("Invalid selection.");
+                        }
+                    } else if (matchingRows.length === 1) {
+                        const data = matchingRows[0].values[0];
+                        populateFormData(data);
+                        alert("Record loaded successfully!");
+                    } else {
+                        alert("Record not found.");
+                    }
+                });
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Failed to load record.");
+            }
+        });
+
+        document.getElementById("newRecordBtn").addEventListener("click", () => {
+            clearForm(); // Clear the form when the "New Record" button is clicked
+        });
+
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = [
+                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
+                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
+                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
+                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'lob', 'allyMailId',
+                'cognizantEmailId'
+            ];
+
+            requiredFields.forEach(field => {
+                const input = document.getElementById(field);
+                const errorElement = document.getElementById(`${field}Error`);
+                if (input && errorElement) {
+                    if (!input.value) {
+                        input.classList.add("invalid");
+                        errorElement.textContent = `${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required.`;
+                        isValid = false;
+                    } else {
+                        input.classList.remove("invalid");
+                        errorElement.textContent = '';
+                    }
+                }
+            });
+
+            const associateId = document.getElementById("associateId");
+            const homeManagerId = document.getElementById("homeManagerId");
+            if (associateId && associateId.value.length !== 6) {
+                associateId.classList.add("invalid");
+                document.getElementById("associateIdError").textContent = "Associate ID must be 6 digits.";
+                isValid = false;
+            } else if (associateId) {
+                associateId.classList.remove("invalid");
+                document.getElementById("associateIdError").textContent = '';
+            }
+
+            if (homeManagerId && homeManagerId.value.length !== 6) {
+                homeManagerId.classList.add("invalid");
+                document.getElementById("homeManagerIdError").textContent = "Home Manager ID must be 6 digits.";
+                isValid = false;
+            } else if (homeManagerId) {
+                homeManagerId.classList.remove("invalid");
+                document.getElementById("homeManagerIdError").textContent = '';
+            }
+
+            return isValid;
+        }
+        function populateFormData(data) {
+            const fields = [
+                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
+                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
+                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
+                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
+                'cognizantEmailId'
+            ];
+            fields.forEach((field, index) => {
+                document.getElementById(field).value = data[index];
+            });
+        }
+
+        function collectFormData() {
+            const fields = [
+                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
+                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
+                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
+                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
+                'cognizantEmailId'
+            ];
+            const data = {};
+            fields.forEach(field => {
+                data[field] = field.includes('Date') ? formatDate(document.getElementById(field).value) : document.getElementById(field).value;
+            });
+            return data;
+        }
+
+        function formatDate(date) {
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return new Date(date).toLocaleDateString('en-GB', options).replace(/ /g, '-');
+        }
+
+        function clearForm() {
+            const fields = [
+                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
+                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
+                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
+                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
+                'cognizantEmailId'
+            ];
+            fields.forEach(field => {
+                document.getElementById(field).value = '';
+                document.getElementById(field).classList.remove("invalid");
+                document.getElementById(`${field}Error`).textContent = '';
+            });
+        }
+    </script>
+</body>
+
+</html>
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const XLSX = require('xlsx');
 const fs = require('fs');
-const path = require('path');
 
 const app = express();
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json()); // Add this line to parse JSON data
+
+// Serve static files (HTML, CSS, JS)
 app.use(express.static('public'));
 
-// Define headers array
-const headers = [
-    'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location', 
-    'On/Off', 'Billable', 'Allocation Start Date', 'Billing Start Date', 'Allocation End Date', 
-    'Billing End Date', 'Billing Rate', 'Department', 'Home Manager ID', 'Home Manager Name', 
-    'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track', 
-    'Sub Track', 'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 
-    'Onsite + Offshore Project', 'Engagement Manager', 'Alternate Engagement Manager', 
-    'Director', 'Exec Lead', 'Ally CIO', 'LoB', 'Ally Mail ID', 'Cognizant Email ID'
-];
-
 app.post('/submit', (req, res) => {
-    const filePath = 'attendance.xlsx';
-    let workbook;
-    let worksheet;
-    let data = [];
+    const {
+        esaProjectId, esaProjectName, associateId, name, designation, location, onOff, billable,
+        allocationStartDate, billingStartDate, allocationEndDate, billingEndDate, billingRate, department,
+        homeManagerId, homeManagerName, projectPoc, status, requisitionSowContractNumber, zId, allyTrack,
+        subTrack, integratedProject, onsiteOnlyProject, offshoreOnlyProject, onsiteOffshoreProject,
+        engagementManager, alternateEngagementManager, director, execLead, allyCio, lob, allyMailId,
+        cognizantEmailId
+    } = req.body;
 
-    // Read existing file or create new
-    if (fs.existsSync(filePath)) {
-        workbook = XLSX.readFile(filePath);
-        worksheet = workbook.Sheets['EmployeeData'];
-        data = XLSX.utils.sheet_to_json(worksheet);
-    } else {
-        workbook = XLSX.utils.book_new();
-        worksheet = XLSX.utils.json_to_sheet([], { header: headers });
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'EmployeeData');
+    // Validate all required fields
+    if (!esaProjectId || !esaProjectName || !associateId || !name || !designation || !location || !onOff || !billable ||
+        !allocationStartDate || !billingStartDate || !allocationEndDate || !billingEndDate || !billingRate || !department ||
+        !homeManagerId || !homeManagerName || !projectPoc || !status || !requisitionSowContractNumber || !zId || !allyTrack ||
+        !subTrack || !integratedProject || !onsiteOnlyProject || !offshoreOnlyProject || !onsiteOffshoreProject ||
+        !engagementManager || !alternateEngagementManager || !director || !execLead || !lob || !allyMailId || !cognizantEmailId) {
+        return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Process new data
-    const newRow = {};
-    headers.forEach((header, index) => {
-        const field = header.toLowerCase().replace(/[^a-z0-9]+/g, '');
-        newRow[header] = req.body[field];
-    });
+    const filePath = 'attendance.xlsx';
+    const headers = [
+        'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location', 'On/Off', 'Billable',
+        'Allocation Start Date', 'Billing Start Date', 'Allocation End Date', 'Billing End Date', 'Billing Rate', 'Department',
+        'Home Manager ID', 'Home Manager Name', 'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track',
+        'Sub Track', 'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 'Onsite + Offshore Project',
+        'Engagement Manager', 'Alternate Engagement Manager', 'Director', 'Exec Lead', 'Ally CIO', 'LoB', 'Ally Mail ID',
+        'Cognizant Email ID'
+    ];
+    let data = [];
 
-    // Update or add row
-    const existingIndex = data.findIndex(row => row['Associate ID'] === newRow['Associate ID']);
+    // Read existing data if the file exists
+    if (fs.existsSync(filePath)) {
+        const workbook = XLSX.readFile(filePath);
+        const worksheet = workbook.Sheets['Sheet2'];
+        data = XLSX.utils.sheet_to_json(worksheet);
+    }
+
+    // Check if the Associate ID already exists
+    const existingIndex = data.findIndex(row => row['Associate ID'] === associateId);
+
+    // Prepare the new row data
+    const newRow = {
+        'ESA Project ID': esaProjectId,
+        'ESA Project Name': esaProjectName,
+        'Associate ID': associateId,
+        'Name': name,
+        'Designation': designation,
+        'Location': location,
+        'On/Off': onOff,
+        'Billable': billable,
+        'Allocation Start Date': allocationStartDate,
+        'Billing Start Date': billingStartDate,
+        'Allocation End Date': allocationEndDate,
+        'Billing End Date': billingEndDate,
+        'Billing Rate': billingRate,
+        'Department': department,
+        'Home Manager ID': homeManagerId,
+        'Home Manager Name': homeManagerName,
+        'Project POC': projectPoc,
+        'Status': status,
+        'Requisition/SOW Contract Number': requisitionSowContractNumber,
+        'Z-ID': zId,
+        'Ally Track': allyTrack,
+        'Sub Track': subTrack,
+        'Integrated Project': integratedProject,
+        'Onsite Only Project': onsiteOnlyProject,
+        'Offshore Only Project': offshoreOnlyProject,
+        'Onsite + Offshore Project': onsiteOffshoreProject,
+        'Engagement Manager': engagementManager,
+        'Alternate Engagement Manager': alternateEngagementManager,
+        'Director': director,
+        'Exec Lead': execLead,
+        'Ally CIO': allyCio,
+        'LoB': lob,
+        'Ally Mail ID': allyMailId,
+        'Cognizant Email ID': cognizantEmailId
+    };
+
+    // Update or add the new row
     if (existingIndex !== -1) {
         data[existingIndex] = newRow;
     } else {
         data.push(newRow);
     }
 
-    // Write to file
-    const newWorksheet = XLSX.utils.json_to_sheet(data, { header: headers });
-    workbook.Sheets['EmployeeData'] = newWorksheet;
+    // Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet2');
     XLSX.writeFile(workbook, filePath);
 
     res.json({ message: 'Data saved successfully!' });
 });
 
 app.get('/fetch-data', (req, res) => {
-    const { associateId } = req.query;
-    const filePath = 'attendance.xlsx';
+    const { associateId, name } = req.query;
 
+    const filePath = 'attendance.xlsx';
     if (!fs.existsSync(filePath)) {
         return res.status(404).json({ error: 'File not found' });
     }
 
     const workbook = XLSX.readFile(filePath);
-    const worksheet = workbook.Sheets['EmployeeData'];
+    const worksheet = workbook.Sheets['Sheet2'];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
-    const record = data.find(row => row['Associate ID'] == associateId);
+    // Find by Associate ID or Name
+    const record = data.find(row =>
+        row['Associate ID'] === associateId ||
+        row['Name'] === name
+    );
+
     if (!record) return res.status(404).json({ error: 'Record not found' });
     res.json(record);
 });
@@ -79,62 +838,4 @@ app.get('/fetch-data', (req, res) => {
 app.listen(3000, () => console.log('Server running on port 3000'));
 
 
-document.getElementById("editBtn").addEventListener("click", async () => {
-    const associateId = document.getElementById("associateId").value;
-    
-    if (!associateId) {
-        alert("Please enter an Associate ID");
-        return;
-    }
-
-    try {
-        const response = await fetch(`/fetch-data?associateId=${associateId}`);
-        if (!response.ok) throw new Error('Record not found');
-        
-        const data = await response.json();
-        populateFormData(data);
-        alert("Record loaded successfully!");
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Failed to load record");
-    }
-});
-
-// Modified populateFormData function
-function populateFormData(data) {
-    const fieldMap = {
-        'esaProjectId': 'ESA Project ID',
-        'esaProjectName': 'ESA Project Name',
-        'associateId': 'Associate ID',
-        // Add all other field mappings...
-    };
-
-    Object.entries(fieldMap).forEach(([formField, dataField]) => {
-        const element = document.getElementById(formField);
-        if (element) element.value = data[dataField] || '';
-    });
-}
-
-// Modified clearForm function
-function clearForm() {
-    const fields = [
-        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 
-        'location', 'onOff', 'billable', 'allocationStartDate', 'billingStartDate',
-        'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
-        'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 
-        'requisitionSowContractNumber', 'zId', 'allyTrack', 'subTrack',
-        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject',
-        'onsiteOffshoreProject', 'engagementManager', 'alternateEngagementManager',
-        'director', 'execLead', 'allyCio', 'lob', 'allyMailId', 'cognizantEmailId'
-    ];
-
-    fields.forEach(field => {
-        const element = document.getElementById(field);
-        if (element) {
-            element.value = '';
-            element.classList.remove("invalid");
-            const errorElement = document.getElementById(`${field}Error`);
-            if (errorElement) errorElement.textContent = '';
-        }
-    });
-}
+check the code that whatever I enter data is storing in the in excel sheet properly with the headers the first row should be always headers and the mining no should be whatever data in hunted in the UAE it should be enter there please correct the code according to the requirement if I enter an employee ID and search click on the edit button it needs to get all the data of that person into the UI input box
