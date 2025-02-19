@@ -553,8 +553,20 @@
             if (validateForm()) {
                 const data = collectFormData();
                 try {
-                    alert("New record added successfully!");
-                    clearForm(); // Ensure the form is cleared after adding a new record
+                    const response = await fetch('/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert("New record added successfully!");
+                        clearForm(); // Ensure the form is cleared after adding a new record
+                    } else {
+                        alert(result.error || "Failed to add new record. Please try again.");
+                    }
                 } catch (error) {
                     console.error("Error:", error);
                     alert("Failed to add new record. Please try again.");
@@ -568,37 +580,34 @@
             const associateId = document.getElementById("associateId").value;
             const name = document.getElementById("name").value;
             try {
-                await Excel.run(async (context) => {
-                    const sheet = context.workbook.worksheets.getActiveWorksheet();
-                    const table = sheet.tables.getItem("EmployeeTable");
-                    const rows = table.rows.load("values");
-
-                    await context.sync();
-
-                    const matchingRows = rows.items.filter(row => row.values[0][2] === associateId || row.values[0][3] === name);
-                    if (matchingRows.length > 1) {
-                        // Prompt user to select a specific record
-                        const selectedIndex = prompt("Multiple records found. Enter the index of the record to edit (0-based):");
-                        if (selectedIndex !== null && selectedIndex >= 0 && selectedIndex < matchingRows.length) {
-                            const data = matchingRows[selectedIndex].values[0];
-                            populateFormData(data);
-                            alert("Record loaded successfully!");
-                        } else {
-                            alert("Invalid selection.");
-                        }
-                    } else if (matchingRows.length === 1) {
-                        const data = matchingRows[0].values[0];
-                        populateFormData(data);
-                        alert("Record loaded successfully!");
-                    } else {
-                        alert("Record not found.");
-                    }
-                });
+                const response = await fetch(`/fetch-data?associateId=${associateId}&name=${name}`);
+                const result = await response.json();
+                console.log("Fetched data:", result); // Log the fetched data
+                if (response.ok) {
+                    populateFormData(result);
+                    alert("Record loaded successfully!");
+                } else {
+                    alert(result.error || "Record not found.");
+                }
             } catch (error) {
                 console.error("Error:", error);
                 alert("Failed to load record.");
             }
         });
+
+        function populateFormData(data) {
+            const fields = [
+                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
+                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
+                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
+                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
+                'cognizantEmailId'
+            ];
+            fields.forEach((field) => {
+                document.getElementById(field).value = data[field] || '';
+            });
+        }
 
         document.getElementById("newRecordBtn").addEventListener("click", () => {
             clearForm(); // Clear the form when the "New Record" button is clicked
@@ -611,7 +620,7 @@
                 'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
                 'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
                 'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
-                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'lob', 'allyMailId',
+                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
                 'cognizantEmailId'
             ];
 
@@ -652,6 +661,7 @@
 
             return isValid;
         }
+
         function populateFormData(data) {
             const fields = [
                 'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
@@ -661,8 +671,8 @@
                 'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
                 'cognizantEmailId'
             ];
-            fields.forEach((field, index) => {
-                document.getElementById(field).value = data[index];
+            fields.forEach((field) => {
+                document.getElementById(field).value = data[field] || '';
             });
         }
 
@@ -677,14 +687,9 @@
             ];
             const data = {};
             fields.forEach(field => {
-                data[field] = field.includes('Date') ? formatDate(document.getElementById(field).value) : document.getElementById(field).value;
+                data[field] = document.getElementById(field).value;
             });
             return data;
-        }
-
-        function formatDate(date) {
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            return new Date(date).toLocaleDateString('en-GB', options).replace(/ /g, '-');
         }
 
         function clearForm() {
@@ -697,9 +702,15 @@
                 'cognizantEmailId'
             ];
             fields.forEach(field => {
-                document.getElementById(field).value = '';
-                document.getElementById(field).classList.remove("invalid");
-                document.getElementById(`${field}Error`).textContent = '';
+                const input = document.getElementById(field);
+                const errorElement = document.getElementById(`${field}Error`);
+                if (input) {
+                    input.value = '';
+                    input.classList.remove("invalid");
+                }
+                if (errorElement) {
+                    errorElement.textContent = '';
+                }
             });
         }
     </script>
@@ -826,16 +837,12 @@ app.get('/fetch-data', (req, res) => {
     const data = XLSX.utils.sheet_to_json(worksheet);
 
     // Find by Associate ID or Name
-    const record = data.find(row =>
-        row['Associate ID'] === associateId ||
+    const record = data.find(row => 
+        row['Associate ID'] === associateId || 
         row['Name'] === name
     );
 
     if (!record) return res.status(404).json({ error: 'Record not found' });
     res.json(record);
 });
-
 app.listen(3000, () => console.log('Server running on port 3000'));
-
-
-check the code that whatever I enter data is storing in the in excel sheet properly with the headers the first row should be always headers and the mining no should be whatever data in hunted in the UAE it should be enter there please correct the code according to the requirement if I enter an employee ID and search click on the edit button it needs to get all the data of that person into the UI input box
