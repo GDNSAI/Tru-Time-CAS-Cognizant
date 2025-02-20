@@ -1,17 +1,12 @@
-Here's the modified code to handle historic records with color coding and ordering:
+Here's the complete implementation maintaining your existing functionality while adding the requested features:
 
-```html
-<!-- Updated HTML (add Get button) -->
-<div class="button-container">
-    <button id="getBtn">Get</button>
-    <button id="editBtn">Edit Record</button>
-    <button id="newRecordBtn">New Record</button>
-    <button id="submitBtn">Submit</button>
-</div>
+1. First, install the required package:
+```bash
+npm install xlsx-style
 ```
 
+2. Modified server code (server.js):
 ```javascript
-// Updated server-side code
 const express = require('express');
 const bodyParser = require('body-parser');
 const XLSX = require('xlsx-style');
@@ -21,151 +16,206 @@ const app = express();
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// Helper function to apply style
-function applyHistoricStyle(sheet, rowIndex) {
-    const range = XLSX.utils.decode_range(sheet['!ref']);
-    for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: col });
-        if (!sheet[cellAddress]) continue;
-        sheet[cellAddress].s = {
-            fill: { patternType: 'solid', fgColor: { rgb: 'FFFF0000' } },
-            font: { color: { rgb: 'FFFFFFFF' } }
-        };
+const FILE_PATH = 'attendance.xlsx';
+const HEADERS = [
+    'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location',
+    'On/Off', 'Billable', 'Allocation Start Date', 'Billing Start Date', 'Allocation End Date',
+    'Billing End Date', 'Billing Rate', 'Department', 'Home Manager ID', 'Home Manager Name',
+    'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track', 'Sub Track',
+    'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 'Onsite + Offshore Project',
+    'Engagement Manager', 'Alternate Engagement Manager', 'Director', 'Exec Lead', 'Ally CIO', 'LoB',
+    'Ally Mail ID', 'Cognizant Email ID'
+];
+
+// Helper function to apply historic style
+const applyHistoricStyle = (worksheet, rowIndex) => {
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for(let col = range.s.c; col <= range.e.c; col++) {
+        const cell = XLSX.utils.encode_cell({r: rowIndex, c: col});
+        if(worksheet[cell]) {
+            worksheet[cell].s = {
+                fill: {fgColor: {rgb: "FF0000"}, patternType: "solid"},
+                font: {color: {rgb: "FFFFFF"}}
+            };
+        }
     }
-}
+};
 
 app.post('/submit', (req, res) => {
-    const filePath = 'attendance.xlsx';
-    let historicData = [];
-    let currentData = [];
+    try {
+        let workbook;
+        let historicData = [];
+        let currentData = [];
 
-    // Read existing data
-    if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath, { cellStyles: true });
-        const worksheet = workbook.Sheets['Sheet1'];
-        const allData = XLSX.utils.sheet_to_json(worksheet);
-        
-        // Separate historic and current data
-        historicData = allData.filter(row => row.Status === 'Historic');
-        currentData = allData.filter(row => row.Status === 'Current');
-    }
+        // Read existing data if file exists
+        if(fs.existsSync(FILE_PATH)) {
+            workbook = XLSX.readFile(FILE_PATH, {cellStyles: true});
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const allData = XLSX.utils.sheet_to_json(worksheet);
+            
+            // Split existing data
+            historicData = allData.filter(row => row.Status === 'Historic');
+            currentData = allData.filter(row => row.Status === 'Current');
+        }
 
-    // Create new row
-    const newRow = { ...req.body, Status: req.body.status };
-    const existingIndex = [...historicData, ...currentData].findIndex(row => 
-        row['Associate ID'] === newRow.associateId
-    );
+        // Prepare new row data
+        const newRow = HEADERS.reduce((acc, header) => {
+            acc[header] = req.body[header.replace(/ /g, '')] || '';
+            return acc;
+        }, {});
 
-    // Remove existing entry if exists
-    if (existingIndex !== -1) {
-        if (historicData.length > existingIndex) {
-            historicData.splice(existingIndex, 1);
+        // Remove existing entry if present
+        const allExisting = [...historicData, ...currentData];
+        const existingIndex = allExisting.findIndex(row => 
+            row['Associate ID'] === newRow['Associate ID']
+        );
+
+        if(existingIndex !== -1) {
+            if(existingIndex < historicData.length) {
+                historicData.splice(existingIndex, 1);
+            } else {
+                currentData.splice(existingIndex - historicData.length, 1);
+            }
+        }
+
+        // Add to appropriate section
+        if(newRow.Status === 'Historic') {
+            historicData.unshift(newRow); // Add new historic records at top
         } else {
-            currentData.splice(existingIndex - historicData.length, 1);
+            currentData.push(newRow); // Add current records at bottom
         }
+
+        // Create new workbook
+        const combinedData = [...historicData, ...currentData];
+        const newWorksheet = XLSX.utils.json_to_sheet(combinedData, {header: HEADERS});
+
+        // Apply styles to historic rows
+        combinedData.forEach((row, index) => {
+            if(row.Status === 'Historic') {
+                applyHistoricStyle(newWorksheet, index + 1); // +1 for header offset
+            }
+        });
+
+        // Create and save workbook
+        const newWorkbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, 'Employee Data');
+        XLSX.writeFile(newWorkbook, FILE_PATH, {bookSST: true});
+
+        res.json({success: true, message: 'Data saved successfully!'});
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({success: false, message: 'Server error'});
     }
-
-    // Add to appropriate section
-    if (newRow.Status === 'Historic') {
-        historicData.unshift(newRow);
-    } else {
-        currentData.push(newRow);
-    }
-
-    // Combine data
-    const combinedData = [...historicData, ...currentData];
-
-    // Create worksheet with styles
-    const worksheet = XLSX.utils.json_to_sheet(combinedData);
-    worksheet['!cols'] = Array(Object.keys(newRow).length).fill({ width: 20 });
-
-    // Apply styles to historic rows
-    combinedData.forEach((row, index) => {
-        if (row.Status === 'Historic') {
-            applyHistoricStyle(worksheet, index + 1); // +1 for header row
-        }
-    });
-
-    // Create workbook and save
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-    XLSX.writeFile(workbook, filePath, { bookSST: true });
-
-    res.json({ message: 'Data saved successfully!' });
 });
 
-// Updated fetch endpoint
 app.get('/fetch-data', (req, res) => {
-    const { associateId } = req.query;
-    const filePath = 'attendance.xlsx';
+    try {
+        const { associateId } = req.query;
+        
+        if(!fs.existsSync(FILE_PATH)) {
+            return res.status(404).json({error: 'File not found'});
+        }
 
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
+        const workbook = XLSX.readFile(FILE_PATH, {cellStyles: true});
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+        const record = data.find(row => row['Associate ID'] == associateId);
 
-    const workbook = XLSX.readFile(filePath, { cellStyles: true });
-    const worksheet = workbook.Sheets['Sheet1'];
-    const data = XLSX.utils.sheet_to_json(worksheet);
-    const record = data.find(row => row['Associate ID'] === associateId);
-
-    if (!record) return res.status(404).json({ error: 'Record not found' });
-    res.json(record);
+        if(!record) return res.status(404).json({error: 'Record not found'});
+        res.json(record);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({error: 'Server error'});
+    }
 });
 
 app.listen(3000, () => console.log('Server running on port 3000'));
 ```
 
+3. Modified client-side script section:
 ```javascript
-// Updated client-side script
+// Add Get button functionality
 document.getElementById("getBtn").addEventListener("click", (event) => {
     event.preventDefault();
     const associateId = document.getElementById('associateId').value;
     
-    if (!associateId) {
+    if(!associateId) {
         alert('Please enter Associate ID');
         return;
     }
 
     fetch(`/fetch-data?associateId=${associateId}`)
-        .then(response => response.json())
+        .then(response => {
+            if(!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
         .then(data => {
-            if (data.error) {
+            if(data.error) {
                 alert(data.error);
             } else {
                 // Populate all form fields
                 Object.keys(data).forEach(key => {
                     const element = document.getElementById(key.replace(/ /g, ''));
-                    if (element) element.value = data[key];
+                    if(element) {
+                        element.value = data[key];
+                        // For select elements
+                        if(element.tagName === 'SELECT') {
+                            const option = Array.from(element.options).find(
+                                opt => opt.value === data[key]
+                            );
+                            if(option) option.selected = true;
+                        }
+                    }
                 });
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error fetching data');
+        });
 });
 
-// Keep the rest of the client-side validation and logic from original code
+// Keep existing validation and other functions unchanged
+// ...
 ```
 
-Key changes made:
-
-1. Added a "Get" button to fetch existing records
-2. Modified Excel handling to use xlsx-style package for styling
-3. Implemented historic record ordering and coloring
-4. Updated data storage logic to maintain historic records at top
-5. Added proper styling for historic rows in Excel
-6. Enhanced the fetch endpoint to handle styling information
-
-To implement this:
-
-1. Install the required package:
-```bash
-npm install xlsx-style
+4. Add the Get button to your HTML:
+```html
+<div class="button-container">
+    <button id="getBtn">Get</button>
+    <button id="editBtn">Edit Record</button>
+    <button id="newRecordBtn">New Record</button>
+    <button id="submitBtn">Submit</button>
+</div>
 ```
 
-2. Create a 'public' directory and place the updated HTML file there
+Key features implemented:
+1. **Historic Records Styling**:
+   - Entire row turns red with white text when status is "Historic"
+   - Uses `xlsx-style` package for Excel styling
+   - Applies styles programmatically during Excel file creation
 
-The Excel file will now:
-- Show historic records in red at the top
-- Keep current records below in default color
-- Maintain this order when new records are added
-- Color entire row red for historic status
-- Preserve all existing functionality
+2. **Data Ordering**:
+   - Historic records always appear at the top of the sheet
+   - Current records appear below historic ones
+   - New historic records are added to the top of historic section
+   - Current records are added to the bottom of current section
 
-Note: Make sure to handle Excel file permissions properly and test thoroughly with sample data. The styling might need adjustments based on your Excel version and viewer preferences.
+3. **Get Button Functionality**:
+   - New "Get" button to fetch existing records
+   - Populates form fields with existing data
+   - Handles both input fields and select dropdowns
+   - Maintains existing validation and form functionality
+
+4. **Data Integrity**:
+   - Prevents duplicate entries
+   - Updates existing records instead of duplicating
+   - Maintains data types during read/write operations
+
+To use this:
+1. Replace your existing server code
+2. Update the HTML with the Get button
+3. Update the client-side script section
+4. Install dependencies with `npm install xlsx-style`
+
+The solution maintains all your original functionality while adding the requested features for historic record styling, ordering, and data retrieval.
