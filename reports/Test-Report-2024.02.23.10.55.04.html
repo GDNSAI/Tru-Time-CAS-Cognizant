@@ -1,236 +1,304 @@
-I'll help you modify the code to include encryption and handle multiple query reports. Here's the improved solution:
+Here’s a **step-by-step guide** to set up the project from scratch, including all dependencies and processes:
 
-1. First, create a new `cryptoUtil.js` file:
+---
 
-```javascript
-const crypto = require('crypto');
-const fs = require('fs');
+### **Step 1: Set Up the Project**
+1. **Create a new project folder**:
+   ```bash
+   mkdir cypress-db-testing
+   cd cypress-db-testing
+   ```
 
-const ALGORITHM = 'aes-256-cbc';
-const ENCODING = 'hex';
-const IV_LENGTH = 16;
-const SALT = 'your-static-salt-here'; // Replace with a secure random string
+2. **Initialize a Node.js project**:
+   ```bash
+   npm init -y
+   ```
 
-function getKey(secret) {
-    return crypto.pbkdf2Sync(secret, SALT, 100000, 32, 'sha512');
-}
+3. **Install dependencies**:
+   ```bash
+   npm install cypress oracledb crypto fs path
+   ```
 
-function encrypt(text, secret) {
-    const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(ALGORITHM, getKey(secret), iv);
-    let encrypted = cipher.update(text, 'utf8', ENCODING);
-    encrypted += cipher.final(ENCODING);
-    return iv.toString(ENCODING) + ':' + encrypted;
-}
+4. **Install dev dependencies** (for development and testing):
+   ```bash
+   npm install --save-dev mocha chai
+   ```
 
-function decrypt(text, secret) {
-    const [ivString, encryptedString] = text.split(':');
-    const iv = Buffer.from(ivString, ENCODING);
-    const decipher = crypto.createDecipheriv(ALGORITHM, getKey(secret), iv);
-    let decrypted = decipher.update(encryptedString, ENCODING, 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-}
+---
 
-function encryptCredentials(configPath, secret) {
-    const credentials = {
-        user: 'system',
-        password: 'root',
-        connectString: 'localhost:1521/xe'
-    };
-    
-    const encrypted = {
-        user: encrypt(credentials.user, secret),
-        password: encrypt(credentials.password, secret),
-        connectString: encrypt(credentials.connectString, secret)
-    };
-    
-    fs.writeFileSync(configPath, JSON.stringify(encrypted));
-}
+### **Step 2: Set Up Cypress**
+1. **Open Cypress for the first time**:
+   ```bash
+   npx cypress open
+   ```
+   - This will create the Cypress folder structure (`cypress/e2e`, `cypress/fixtures`, etc.).
 
-module.exports = { encrypt, decrypt, encryptCredentials };
+2. **Close Cypress** after the folder structure is created.
+
+---
+
+### **Step 3: Create the Encryption Utility**
+1. Create a file named `cryptoUtil.js` in the root directory:
+   ```javascript
+   const crypto = require('crypto');
+   const fs = require('fs');
+
+   const ALGORITHM = 'aes-256-cbc';
+   const ENCODING = 'hex';
+   const IV_LENGTH = 16;
+   const SALT = 'your-static-salt-here'; // Replace with a secure random string
+
+   function getKey(secret) {
+       return crypto.pbkdf2Sync(secret, SALT, 100000, 32, 'sha512');
+   }
+
+   function encrypt(text, secret) {
+       const iv = crypto.randomBytes(IV_LENGTH);
+       const cipher = crypto.createCipheriv(ALGORITHM, getKey(secret), iv);
+       let encrypted = cipher.update(text, 'utf8', ENCODING);
+       encrypted += cipher.final(ENCODING);
+       return iv.toString(ENCODING) + ':' + encrypted;
+   }
+
+   function decrypt(text, secret) {
+       const [ivString, encryptedString] = text.split(':');
+       const iv = Buffer.from(ivString, ENCODING);
+       const decipher = crypto.createDecipheriv(ALGORITHM, getKey(secret), iv);
+       let decrypted = decipher.update(encryptedString, ENCODING, 'utf8');
+       decrypted += decipher.final('utf8');
+       return decrypted;
+   }
+
+   function encryptCredentials(configPath, secret) {
+       const credentials = {
+           user: 'system', // Replace with your DB username
+           password: 'root', // Replace with your DB password
+           connectString: 'localhost:1521/xe' // Replace with your DB connection string
+       };
+       
+       const encrypted = {
+           user: encrypt(credentials.user, secret),
+           password: encrypt(credentials.password, secret),
+           connectString: encrypt(credentials.connectString, secret)
+       };
+       
+       fs.writeFileSync(configPath, JSON.stringify(encrypted));
+   }
+
+   module.exports = { encrypt, decrypt, encryptCredentials };
+   ```
+
+2. **Generate the encrypted config file**:
+   - Create a temporary script named `encryptConfig.js`:
+     ```javascript
+     const { encryptCredentials } = require('./cryptoUtil');
+     const SECRET = 'your-strong-secret-key'; // Replace with your strong secret
+     encryptCredentials('encrypted-config.json', SECRET);
+     ```
+   - Run the script:
+     ```bash
+     node encryptConfig.js
+     ```
+   - This will create an `encrypted-config.json` file with encrypted credentials.
+
+3. **Delete `encryptConfig.js`** after generating the encrypted config file (for security reasons).
+
+---
+
+### **Step 4: Set Up the Cypress Plugin**
+1. Create a file named `cypress.config.js` in the root directory:
+   ```javascript
+   const { defineConfig } = require("cypress");
+
+   module.exports = defineConfig({
+     e2e: {
+       setupNodeEvents(on, config) {
+         require('./cypress/plugins/dbPlugin')(on, config);
+       },
+     },
+   });
+   ```
+
+2. Create a folder named `plugins` inside the `cypress` directory:
+   ```bash
+   mkdir cypress/plugins
+   ```
+
+3. Create a file named `dbPlugin.js` inside the `cypress/plugins` folder:
+   ```javascript
+   const cryptoUtil = require('../../cryptoUtil');
+   const fs = require('fs');
+   const path = require('path');
+   const oracledb = require('oracledb');
+
+   // Read encrypted config
+   const encryptedConfig = JSON.parse(fs.readFileSync('encrypted-config.json'));
+   const secret = process.env.DB_SECRET; // Set this in environment
+
+   function getDbConfig() {
+       return {
+           user: cryptoUtil.decrypt(encryptedConfig.user, secret),
+           password: cryptoUtil.decrypt(encryptedConfig.password, secret),
+           connectString: cryptoUtil.decrypt(encryptedConfig.connectString, secret)
+       };
+   }
+
+   async function queryTestDb(query) {
+       let connection;
+       try {
+           connection = await oracledb.getConnection(getDbConfig());
+           const result = await connection.execute(query);
+           return {
+               columns: result.metaData.map(col => col.name),
+               data: result.rows,
+               query: query
+           };
+       } finally {
+           if (connection) await connection.close();
+       }
+   }
+
+   async function generateHtmlReport(data) {
+       let htmlContent = '<html><head><style>table { border-collapse: collapse; margin: 20px 0 } td, th { padding: 8px; border: 1px solid #ddd } .fail { background-color: #ffcccc } .pass { background-color: #ccffcc }</style></head><body>';
+       
+       let totalTests = 0;
+       let passedTests = 0;
+       let failedTests = 0;
+
+       data.forEach((queryResult, index) => {
+           htmlContent += `<h3>Query ${index + 1}:</h3>`;
+           htmlContent += `<pre>${queryResult.query}</pre>`;
+           htmlContent += '<table>';
+           
+           // Header
+           htmlContent += '<tr>';
+           queryResult.columns.forEach(col => {
+               htmlContent += `<th>${col}</th>`;
+           });
+           htmlContent += '</tr>';
+           
+           // Rows
+           queryResult.data.forEach(row => {
+               const hasFailure = row.some(cell => 
+                   typeof cell === 'string' && cell.toLowerCase().includes('fail')
+               );
+               
+               htmlContent += `<tr class="${hasFailure ? 'fail' : 'pass'}">`;
+               row.forEach(cell => {
+                   htmlContent += `<td>${cell}</td>`;
+               });
+               htmlContent += '</tr>';
+               
+               if (hasFailure) failedTests++;
+               else passedTests++;
+               totalTests++;
+           });
+           
+           htmlContent += '</table>';
+       });
+
+       // Summary
+       htmlContent += `<h2>Summary</h2>
+           <table>
+               <tr><th>Total Tests</th><td>${totalTests}</td></tr>
+               <tr><th>Passed</th><td class="pass">${passedTests}</td></tr>
+               <tr><th>Failed</th><td class="fail">${failedTests}</td></tr>
+           </table>
+       </body></html>`;
+
+       return htmlContent;
+   }
+
+   module.exports = (on, config) => {
+       on("task", {
+           queryDb: async (query) => await queryTestDb(query),
+           runSqlFile: async (filePath) => {
+               const queries = fs.readFileSync(path.resolve(filePath), "utf8")
+                   .split(';')
+                   .map(q => q.trim())
+                   .filter(q => q.length > 0);
+               
+               const results = [];
+               for (const query of queries) {
+                   results.push(await queryTestDb(query));
+               }
+               return results;
+           },
+           generateHtmlReport: async (data) => {
+               const htmlContent = await generateHtmlReport(data);
+               const outputPath = path.join(__dirname, '../e2e/report.html');
+               await fs.promises.writeFile(outputPath, htmlContent);
+               return outputPath;
+           }
+       });
+   };
+   ```
+
+---
+
+### **Step 5: Write the Test**
+1. Create a file named `dbTest.spec.js` inside the `cypress/e2e` folder:
+   ```javascript
+   describe('Database Testing', () => {
+       it('Run SQL file and generate report', () => {
+           const sqlFilePath = 'cypress/e2e/Batch.sql';
+           
+           cy.task('runSqlFile', sqlFilePath).then(results => {
+               cy.task('generateHtmlReport', results).then(reportPath => {
+                   cy.log(`Report generated at: ${reportPath}`);
+               });
+           });
+       });
+   });
+   ```
+
+2. Create a file named `Batch.sql` inside the `cypress/e2e` folder:
+   ```sql
+   SELECT * FROM your_table_1;
+   SELECT * FROM your_table_2;
+   ```
+
+---
+
+### **Step 6: Set Environment Variable**
+1. Set the `DB_SECRET` environment variable:
+   - On macOS/Linux:
+     ```bash
+     export DB_SECRET=your-strong-secret-key
+     ```
+   - On Windows:
+     ```bash
+     set DB_SECRET=your-strong-secret-key
+     ```
+
+---
+
+### **Step 7: Run the Test**
+1. Run Cypress:
+   ```bash
+   npx cypress open
+   ```
+2. Select the `dbTest.spec.js` file to run the test.
+
+3. After the test runs, check the generated `report.html` file in the `cypress/e2e` folder.
+
+---
+
+### **Folder Structure**
+```
+cypress-db-testing/
+├── cypress/
+│   ├── e2e/
+│   │   ├── dbTest.spec.js
+│   │   ├── Batch.sql
+│   │   └── report.html
+│   └── plugins/
+│       └── dbPlugin.js
+├── encrypted-config.json
+├── cryptoUtil.js
+├── cypress.config.js
+├── package.json
+└── node_modules/
 ```
 
-2. Create a config file with encrypted credentials (run this once):
-
-```javascript
-const { encryptCredentials } = require('./cryptoUtil');
-const SECRET = 'your-strong-secret-key'; // Replace with your strong secret
-encryptCredentials('encrypted-config.json', SECRET);
-```
-
-3. Modified plugin file:
-
-```javascript
-const cryptoUtil = require('./cryptoUtil');
-const fs = require('fs');
-const path = require('path');
-const oracledb = require('oracledb');
-
-// Read encrypted config
-const encryptedConfig = JSON.parse(fs.readFileSync('encrypted-config.json'));
-const secret = process.env.DB_SECRET; // Set this in environment
-
-function getDbConfig() {
-    return {
-        user: cryptoUtil.decrypt(encryptedConfig.user, secret),
-        password: cryptoUtil.decrypt(encryptedConfig.password, secret),
-        connectString: cryptoUtil.decrypt(encryptedConfig.connectString, secret)
-    };
-}
-
-async function queryTestDb(query) {
-    let connection;
-    try {
-        connection = await oracledb.getConnection(getDbConfig());
-        const result = await connection.execute(query);
-        return {
-            columns: result.metaData.map(col => col.name),
-            data: result.rows,
-            query: query
-        };
-    } finally {
-        if (connection) await connection.close();
-    }
-}
-
-async function generateHtmlReport(data) {
-    let htmlContent = '<html><head><style>table { border-collapse: collapse; margin: 20px 0 } td, th { padding: 8px; border: 1px solid #ddd } .fail { background-color: #ffcccc } .pass { background-color: #ccffcc }</style></head><body>';
-    
-    let totalTests = 0;
-    let passedTests = 0;
-    let failedTests = 0;
-
-    data.forEach((queryResult, index) => {
-        htmlContent += `<h3>Query ${index + 1}:</h3>`;
-        htmlContent += `<pre>${queryResult.query}</pre>`;
-        htmlContent += '<table>';
-        
-        // Header
-        htmlContent += '<tr>';
-        queryResult.columns.forEach(col => {
-            htmlContent += `<th>${col}</th>`;
-        });
-        htmlContent += '</tr>';
-        
-        // Rows
-        queryResult.data.forEach(row => {
-            const hasFailure = row.some(cell => 
-                typeof cell === 'string' && cell.toLowerCase().includes('fail')
-            );
-            
-            htmlContent += `<tr class="${hasFailure ? 'fail' : 'pass'}">`;
-            row.forEach(cell => {
-                htmlContent += `<td>${cell}</td>`;
-            });
-            htmlContent += '</tr>';
-            
-            if (hasFailure) failedTests++;
-            else passedTests++;
-            totalTests++;
-        });
-        
-        htmlContent += '</table>';
-    });
-
-    // Summary
-    htmlContent += `<h2>Summary</h2>
-        <table>
-            <tr><th>Total Tests</th><td>${totalTests}</td></tr>
-            <tr><th>Passed</th><td class="pass">${passedTests}</td></tr>
-            <tr><th>Failed</th><td class="fail">${failedTests}</td></tr>
-        </table>
-    </body></html>`;
-
-    return htmlContent;
-}
-
-module.exports = (on, config) => {
-    on("task", {
-        queryDb: async (query) => await queryTestDb(query),
-        runSqlFile: async (filePath) => {
-            const queries = fs.readFileSync(path.resolve(filePath), "utf8")
-                .split(';')
-                .map(q => q.trim())
-                .filter(q => q.length > 0);
-            
-            const results = [];
-            for (const query of queries) {
-                results.push(await queryTestDb(query));
-            }
-            return results;
-        },
-        generateHtmlReport: async (data) => {
-            const htmlContent = await generateHtmlReport(data);
-            const outputPath = path.join(__dirname, 'e2e/report.html');
-            await fs.promises.writeFile(outputPath, htmlContent);
-            return outputPath;
-        }
-    });
-};
-```
-
-4. Modified test file:
-
-```javascript
-describe('Database Testing', () => {
-    it('Run SQL file and generate report', () => {
-        const sqlFilePath = 'cypress/e2e/Batch.sql';
-        
-        cy.task('runSqlFile', sqlFilePath).then(results => {
-            cy.task('generateHtmlReport', results).then(reportPath => {
-                cy.log(`Report generated at: ${reportPath}`);
-                // Optional: Add assertions to verify test results
-            });
-        });
-    });
-});
-```
-
-Key improvements made:
-
-1. Encryption/Decryption:
-- Uses AES-256-CBC with PBKDF2 key derivation
-- Stores encrypted credentials in a separate file
-- Requires environment variable `DB_SECRET` for decryption
-- Static salt should be replaced with a random value and stored securely
-
-2. Security setup instructions:
-- Run the encryption script once to create `encrypted-config.json`
-- Store the secret key in environment variables:
-  ```bash
-  export DB_SECRET=your-strong-secret-key
-  ```
-- Never commit the secret key or encrypted config to version control
-
-3. Report generation:
-- Handles multiple queries in a single file
-- Preserves original query text in the report
-- Shows results in separate sections for each query
-- Improved styling with CSS classes
-- Comprehensive summary across all queries
-
-4. Error handling:
-- Proper connection cleanup
-- Filter empty queries after splitting
-- Better error propagation
-
-To use this:
-
-1. Generate encrypted config:
-```javascript
-// In a temporary setup script
-const { encryptCredentials } = require('./cryptoUtil');
-encryptCredentials('encrypted-config.json', 'your-secret-key');
-```
-
-2. Set environment variable before running Cypress:
-```bash
-export DB_SECRET=your-secret-key
-# or for Windows:
-# set DB_SECRET=your-secret-key
-```
-
-3. Place your SQL queries in Batch.sql separated by semicolons
-
-This solution provides secure credential storage while maintaining the ability to run multiple queries and generate comprehensive reports.
+This setup ensures secure credential handling, supports multiple SQL queries, and generates a consolidated HTML report.
