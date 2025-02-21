@@ -1,98 +1,45 @@
-app.post('/submit', (req, res) => {
-    // ... (validation remains same)
+const express = require('express');
+const ExcelJS = require('exceljs');
+const app = express();
+app.use(express.json());
 
-    // Read existing data
-    let data = [];
-    if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets['Sheet2'];
-        data = XLSX.utils.sheet_to_json(worksheet);
-    }
+app.post('/export', async (req, res) => {
+  try {
+    const data = req.body;
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Data');
 
-    // Prepare new row with styling information
-    const newRow = {
-        ...req.body,
-        // Add styling flag for Historic records
-        _statusColor: req.body.status === 'Historic' ? 'red' : 'black'
-    };
+    // Define columns (adjust according to your data)
+    worksheet.columns = [
+      { header: 'Name', key: 'name' },
+      { header: 'Date', key: 'date' },
+      // Add more columns as needed
+    ];
 
-    // Add new row to appropriate position
-    if (newRow.status === 'Historic') {
-        data.unshift(newRow); // Add to top
-    } else {
-        data.push(newRow); // Add to bottom
-    }
-
-    // Create worksheet with styling information
-    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
-    
-    // Add styling for Historic rows (limited xlsx support)
-    if (data.some(row => row._statusColor === 'red')) {
-        worksheet['!cols'] = headers.map(() => ({ width: 20 }));
-        data.forEach((row, index) => {
-            if (row._statusColor === 'red') {
-                const cellRef = XLSX.utils.encode_cell({ r: index + 1, c: headers.indexOf('Status') });
-                worksheet[cellRef].s = { font: { color: { rgb: 'FFFF0000' } } };
-            }
+    // Process each data row
+    data.forEach((item) => {
+      const { historic, ...rowData } = item;
+      const row = worksheet.addRow(rowData);
+      
+      // Apply red font if historic
+      if (historic) {
+        row.eachCell((cell) => {
+          cell.font = { color: { argb: 'FFFF0000' } }; // Red
         });
-    }
+      }
+    });
 
-    // Write file
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet2');
-    XLSX.writeFile(workbook, filePath);
+    // Set headers for Excel download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="data.xlsx"');
 
-    res.json({ message: 'Data saved successfully!' });
+    // Send workbook as response
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error generating Excel file');
+  }
 });
 
-
-document.getElementById("submitBtn").addEventListener("click", async () => {
-    if (validateForm()) {
-        const data = collectFormData();
-        try {
-            const response = await fetch('/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            if (response.ok) {
-                alert(data.status === 'Historic' 
-                    ? "Historic record added to top!" 
-                    : "New record added successfully!");
-                clearForm();
-            } else {
-                alert(result.error || "Failed to save data");
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            alert("Failed to save data");
-        }
-    } else {
-        alert("Please correct the highlighted fields.");
-    }
-});
-
-document.getElementById('editBtn').addEventListener('click', function (event) {
-    event.preventDefault();
-    const associateId = document.getElementById('associateId').value;
-    
-    if (!associateId) {
-        alert('Please enter Associate ID');
-        return;
-    }
-
-    fetch(`/fetch-data?associateId=${associateId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                populateFormData(data);
-                // Change status to Current when editing
-                document.getElementById('status').value = 'Current';
-            }
-        })
-        .catch(error => console.error('Error:', error));
-});
+app.listen(3000, () => console.log('Server running on port 3000'));
