@@ -1,23 +1,40 @@
 document.getElementById('editBtn').addEventListener('click', function (event) {
     event.preventDefault();
     const associateId = document.getElementById('associateId').value;
-
+    
     if (!associateId) {
         alert('Please enter Associate ID');
         return;
     }
-
-    // Force status to 'Current' for edit operations
-    fetchData(associateId, 'Current');
-});
-
-// Modified fetchData function to ensure string parameters
-function fetchData(associateId, status) {
-    console.log(`Fetching data for Associate ID: ${associateId} with status: ${status}`);
-    fetch(`/fetch-data?associateId=${encodeURIComponent(associateId)}&status=${encodeURIComponent(status)}`)
+    
+    // Always fetch CURRENT record for editing
+    fetch(`/fetch-data?associateId=${associateId}&status=Current`)
         .then(response => response.json())
         .then(data => {
-            console.log('Data received:', data);
+            if (data.error) {
+                alert(data.error);
+            } else {
+                populateFormData(data);
+                document.getElementById('status').value = 'Current'; // Force status to Current
+            }
+        })
+        .catch(error => console.error('Error:', error));
+});
+
+document.getElementById('getBtn').addEventListener('click', function (event) {
+    event.preventDefault();
+    const associateId = document.getElementById('associateId').value;
+    const status = document.getElementById('status').value;
+    
+    if (!associateId) {
+        alert('Please enter Associate ID');
+        return;
+    }
+    
+    // Fetch based on selected status
+    fetch(`/fetch-data?associateId=${associateId}&status=${status}`)
+        .then(response => response.json())
+        .then(data => {
             if (data.error) {
                 alert(data.error);
             } else {
@@ -25,7 +42,7 @@ function fetchData(associateId, status) {
             }
         })
         .catch(error => console.error('Error:', error));
-}
+});
 
 
 app.get('/fetch-data', (req, res) => {
@@ -40,7 +57,7 @@ app.get('/fetch-data', (req, res) => {
     const worksheet = workbook.Sheets['Sheet2'];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
-    // Convert both values to strings for reliable comparison
+    // Convert both to string for reliable comparison
     const record = data.find(row => 
         row['Associate ID'].toString() === associateId.toString() && 
         row['Status'] === status
