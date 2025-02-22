@@ -1,3 +1,150 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const XLSX = require('xlsx-js-style');
+const fs = require('fs');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Serve static files (HTML, CSS, JS)
+app.use(express.static('public'));
+
+app.post('/submit', (req, res) => {
+    const {
+        esaProjectId, esaProjectName, associateId, name, designation, location, onOff, billable,
+        allocationStartDate, billingStartDate, allocationEndDate, billingEndDate, billingRate, department,
+        homeManagerId, homeManagerName, projectPoc, status, requisitionSowContractNumber, zId, allyTrack,
+        subTrack, integratedProject, onsiteOnlyProject, offshoreOnlyProject, onsiteOffshoreProject,
+        engagementManager, alternateEngagementManager, director, execLead, allyCio, lob, allyMailId,
+        cognizantEmailId
+    } = req.body;
+
+    // Validate all required fields
+    if (!esaProjectId || !esaProjectName || !associateId || !name || !designation || !location || !onOff || !billable ||
+        !allocationStartDate || !billingStartDate || !allocationEndDate || !billingEndDate || !billingRate || !department ||
+        !homeManagerId || !homeManagerName || !projectPoc || !status || !requisitionSowContractNumber || !zId || !allyTrack ||
+        !subTrack || !integratedProject || !onsiteOnlyProject || !offshoreOnlyProject || !onsiteOffshoreProject ||
+        !engagementManager || !alternateEngagementManager || !director || !execLead || !lob || !allyMailId || !cognizantEmailId) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const filePath = 'attendance.xlsx';
+    const headers = [
+        'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location', 'On/Off', 'Billable',
+        'Allocation Start Date', 'Billing Start Date', 'Allocation End Date', 'Billing End Date', 'Billing Rate', 'Department',
+        'Home Manager ID', 'Home Manager Name', 'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track',
+        'Sub Track', 'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 'Onsite + Offshore Project',
+        'Engagement Manager', 'Alternate Engagement Manager', 'Director', 'Exec Lead', 'Ally CIO', 'LoB', 'Ally Mail ID',
+        'Cognizant Email ID'
+    ];
+    let data = [];
+
+    // Read existing data if the file exists
+    if (fs.existsSync(filePath)) {
+        const workbook = XLSX.readFile(filePath);
+        const worksheet = workbook.Sheets['Sheet2'];
+        data = XLSX.utils.sheet_to_json(worksheet);
+    }
+
+    // Remove only "Current" records with this Associate ID
+    data = data.filter(row => !(row['Associate ID'] === associateId && row['Status'] === 'Current'));
+
+    // Prepare the new row data
+    const newRow = {
+        'ESA Project ID': esaProjectId,
+        'ESA Project Name': esaProjectName,
+        'Associate ID': associateId,
+        'Name': name,
+        'Designation': designation,
+        'Location': location,
+        'On/Off': onOff,
+        'Billable': billable,
+        'Allocation Start Date': allocationStartDate,
+        'Billing Start Date': billingStartDate,
+        'Allocation End Date': allocationEndDate,
+        'Billing End Date': billingEndDate,
+        'Billing Rate': billingRate,
+        'Department': department,
+        'Home Manager ID': homeManagerId,
+        'Home Manager Name': homeManagerName,
+        'Project POC': projectPoc,
+        'Status': status,
+        'Requisition/SOW Contract Number': requisitionSowContractNumber,
+        'Z-ID': zId,
+        'Ally Track': allyTrack,
+        'Sub Track': subTrack,
+        'Integrated Project': integratedProject,
+        'Onsite Only Project': onsiteOnlyProject,
+        'Offshore Only Project': offshoreOnlyProject,
+        'Onsite + Offshore Project': onsiteOffshoreProject,
+        'Engagement Manager': engagementManager,
+        'Alternate Engagement Manager': alternateEngagementManager,
+        'Director': director,
+        'Exec Lead': execLead,
+        'Ally CIO': allyCio,
+        'LoB': lob,
+        'Ally Mail ID': allyMailId,
+        'Cognizant Email ID': cognizantEmailId,
+        ...req.body,
+        _statusColor: req.body.status === 'Historic' ? 'red' : 'black'
+    };
+
+    // Add new row to appropriate position
+    if (newRow.status === 'Historic') {
+        data.unshift(newRow); // Add to the top
+    } else {
+        data.push(newRow); // Add to the bottom
+    }
+
+    // Create worksheet with styling information
+    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+
+    // Add styling for Historic rows (limited xlsx support)
+    if (data.some(row => row._statusColor === 'red')) {
+        worksheet['!cols'] = headers.map(() => ({ width: 20 }));
+        data.forEach((row, index) => {
+            if (row._statusColor === 'red') {
+                headers.forEach((header, colIndex) => {
+                    const cellRef = XLSX.utils.encode_cell({ r: index + 1, c: colIndex });
+                    if (!worksheet[cellRef]) worksheet[cellRef] = { v: row[header] };
+                    worksheet[cellRef].s = { font: { color: { rgb: 'FF0000' } } };
+                });
+            }
+        });
+    }
+
+    // Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet2');
+    XLSX.writeFile(workbook, filePath);
+
+    res.json({ message: 'Data saved successfully!' });
+});
+
+app.get('/fetch-data', (req, res) => {
+    const { associateId, status } = req.query;
+
+    const filePath = 'attendance.xlsx';
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'File not found' });
+    }
+
+    const workbook = XLSX.readFile(filePath);
+    const worksheet = workbook.Sheets['Sheet2'];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    // Find by Associate ID and Status
+    const record = data.find(row =>
+        row['Associate ID'] === associateId && row['Status'] === status
+    );
+
+    if (!record) return res.status(404).json({ error: 'Record not found' });
+    res.json(record);
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
+
 
 <!DOCTYPE html>
 <html>
@@ -588,129 +735,41 @@
                 return;
             }
 
-            fetch(`/fetch-data?associateId=${associateId}`)
+            fetchData(associateId, 'Current'); // Fetch only the current record
+        });
+
+        document.getElementById('getBtn').addEventListener('click', function (event) {
+            event.preventDefault();
+            const associateId = document.getElementById('associateId').value;
+            const status = document.getElementById('status').value;
+
+            if (!associateId) {
+                alert('Please enter Associate ID');
+                return;
+            }
+
+            fetchData(associateId, status);
+        });
+        document.getElementById("newRecordBtn").addEventListener("click", () => {
+            clearForm();
+            document.getElementById('status').value = 'Current'; // Default to Current
+        });
+
+        function fetchData(associateId, status) {
+            fetch(`/fetch-data?associateId=${associateId}&status=${status}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
                         alert(data.error);
                     } else {
-                        // Populate form fields
-                        if (document.getElementById('esaProjectId')) {
-                            document.getElementById('esaProjectId').value = data['ESA Project ID'];
-                        }
-                        if (document.getElementById('esaProjectName')) {
-                            document.getElementById('esaProjectName').value = data['ESA Project Name'];
-                        }
-                        if (document.getElementById('associateId')) {
-                            document.getElementById('associateId').value = data['Associate ID'];
-                        }
-                        if (document.getElementById('name')) {
-                            document.getElementById('name').value = data['Name'];
-                        }
-                        if (document.getElementById('status')) {
-                            document.getElementById('status').value = data['Status'];
-                        }
-
-                        if (document.getElementById('allocationStartDate')) {
-                            document.getElementById('allocationStartDate').value = data['Allocation Start Date'];
-                        }
-                        if (document.getElementById('onOff')) {
-                            document.getElementById('onOff').value = data['On/Off'];
-                        }
-                        if (document.getElementById('location')) {
-                            document.getElementById('location').value = data['Location'];
-                        }
-                        if (document.getElementById('designation')) {
-                            document.getElementById('designation').value = data['Designation'];
-                        }
-                        if (document.getElementById('billable')) {
-                            document.getElementById('billable').value = data['Billable'];
-                        }
-                        if (document.getElementById('billingStartDate')) {
-                            document.getElementById('billingStartDate').value = data['Billing Start Date'];
-                        }
-                        if (document.getElementById('allocationEndDate')) {
-                            document.getElementById('allocationEndDate').value = data['Allocation End Date'];
-                        }
-                        if (document.getElementById('billingEndDate')) {
-                            document.getElementById('billingEndDate').value = data['Billing End Date'];
-                        }
-                        if (document.getElementById('billingRate')) {
-                            document.getElementById('billingRate').value = data['Billing Rate'];
-                        }
-                        if (document.getElementById('department')) {
-                            document.getElementById('department').value = data['Department'];
-                        }
-                        if (document.getElementById('homeManagerId')) {
-                            document.getElementById('homeManagerId').value = data['Home Manager ID'];
-                        }
-                        if (document.getElementById('homeManagerName')) {
-                            document.getElementById('homeManagerName').value = data['Home Manager Name'];
-                        }
-                        if (document.getElementById('projectPoc')) {
-                            document.getElementById('projectPoc').value = data['Project POC'];
-                        }
-                        if (document.getElementById('requisitionSowContractNumber')) {
-                            document.getElementById('requisitionSowContractNumber').value = data['Requisition/SOW Contract Number'];
-                        }
-                        if (document.getElementById('zId')) {
-                            document.getElementById('zId').value = data['Z-ID'];
-                        }
-                        if (document.getElementById('allyTrack')) {
-                            document.getElementById('allyTrack').value = data['Ally Track'];
-                        }
-                        if (document.getElementById('subTrack')) {
-                            document.getElementById('subTrack').value = data['Sub Track'];
-                        }
-                        if (document.getElementById('integratedProject')) {
-                            document.getElementById('integratedProject').value = data['Integrated Project'];
-                        }
-                        if (document.getElementById('onsiteOnlyProject')) {
-                            document.getElementById('onsiteOnlyProject').value = data['Onsite Only Project'];
-                        }
-                        if (document.getElementById('offshoreOnlyProject')) {
-                            document.getElementById('offshoreOnlyProject').value = data['Offshore Only Project'];
-                        }
-                        if (document.getElementById('onsiteOffshoreProject')) {
-                            document.getElementById('onsiteOffshoreProject').value = data['Onsite + Offshore Project'];
-                        }
-                        if (document.getElementById('engagementManager')) {
-                            document.getElementById('engagementManager').value = data['Engagement Manager'];
-                        }
-                        if (document.getElementById('alternateEngagementManager')) {
-                            document.getElementById('alternateEngagementManager').value = data['Alternate Engagement Manager'];
-                        }
-                        if (document.getElementById('director')) {
-                            document.getElementById('director').value = data['Director'];
-                        }
-                        if (document.getElementById('execLead')) {
-                            document.getElementById('execLead').value = data['Exec Lead'];
-                        }
-                        if (document.getElementById('allyCio')) {
-                            document.getElementById('allyCio').value = data['Ally CIO'];
-                        }
-                        if (document.getElementById('lob')) {
-                            document.getElementById('lob').value = data['LoB'];
-                        }
-                        if (document.getElementById('allyMailId')) {
-                            document.getElementById('allyMailId').value = data['Ally Mail ID'];
-                        }
-                        if (document.getElementById('cognizantEmailId')) {
-                            document.getElementById('cognizantEmailId').value = data['Cognizant Email ID'];
-                        }
+                        populateFormData(data);
                     }
                 })
                 .catch(error => console.error('Error:', error));
-        });
+        }
+
         function populateFormData(data) {
-            const fields = [
-                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
-                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
-                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
-                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
-                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
-                'cognizantEmailId'
-            ];
+            const fields = getFormFields();
             fields.forEach((field) => {
                 if (document.getElementById(field)) {
                     document.getElementById(field).value = data[field] || '';
@@ -718,21 +777,9 @@
             });
         }
 
-        document.getElementById("newRecordBtn").addEventListener("click", () => {
-            clearForm();
-            document.getElementById('status').value = 'Current'; // Default to Current
-        });
-
         function validateForm() {
             let isValid = true;
-            const requiredFields = [
-                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
-                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
-                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
-                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
-                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
-                'cognizantEmailId'
-            ];
+            const requiredFields = getFormFields();
 
             requiredFields.forEach(field => {
                 const input = document.getElementById(field);
@@ -749,38 +796,28 @@
                 }
             });
 
-            const associateId = document.getElementById("associateId");
-            const homeManagerId = document.getElementById("homeManagerId");
-            if (associateId && associateId.value.length !== 7) {
-                associateId.classList.add("invalid");
-                document.getElementById("associateIdError").textContent = "Associate ID must be 6 digits.";
-                isValid = false;
-            } else if (associateId) {
-                associateId.classList.remove("invalid");
-                document.getElementById("associateIdError").textContent = '';
-            }
-
-            if (homeManagerId && homeManagerId.value.length !== 7) {
-                homeManagerId.classList.add("invalid");
-                document.getElementById("homeManagerIdError").textContent = "Home Manager ID must be 6 digits.";
-                isValid = false;
-            } else if (homeManagerId) {
-                homeManagerId.classList.remove("invalid");
-                document.getElementById("homeManagerIdError").textContent = '';
-            }
+            validateFieldLength("associateId", 7, "Associate ID must be 7 digits.");
+            validateFieldLength("homeManagerId", 7, "Home Manager ID must be 7 digits.");
 
             return isValid;
         }
 
+        function validateFieldLength(fieldId, length, errorMessage) {
+            const input = document.getElementById(fieldId);
+            const errorElement = document.getElementById(`${fieldId}Error`);
+            if (input && input.value.length !== length) {
+                input.classList.add("invalid");
+                errorElement.textContent = errorMessage;
+                return false;
+            } else if (input) {
+                input.classList.remove("invalid");
+                errorElement.textContent = '';
+                return true;
+            }
+        }
+
         function collectFormData() {
-            const fields = [
-                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
-                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
-                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
-                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
-                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
-                'cognizantEmailId'
-            ];
+            const fields = getFormFields();
             const data = {};
             fields.forEach(field => {
                 data[field] = document.getElementById(field).value;
@@ -789,14 +826,7 @@
         }
 
         function clearForm() {
-            const fields = [
-                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
-                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
-                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
-                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
-                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
-                'cognizantEmailId'
-            ];
+            const fields = getFormFields();
             fields.forEach(field => {
                 const input = document.getElementById(field);
                 const errorElement = document.getElementById(`${field}Error`);
@@ -809,130 +839,19 @@
                 }
             });
         }
-        document.getElementById("getBtn").addEventListener("click", (event) => {
-            event.preventDefault();
-            const associateId = document.getElementById('associateId').value;
 
-            if (!associateId) {
-                alert('Please enter Associate ID');
-                return;
-            }
-
-            fetch(`/fetch-data?associateId=${associateId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                    } else {
-                        // Populate form fields
-                        if (document.getElementById('esaProjectId')) {
-                            document.getElementById('esaProjectId').value = data['ESA Project ID'];
-                        }
-                        if (document.getElementById('esaProjectName')) {
-                            document.getElementById('esaProjectName').value = data['ESA Project Name'];
-                        }
-                        if (document.getElementById('associateId')) {
-                            document.getElementById('associateId').value = data['Associate ID'];
-                        }
-                        if (document.getElementById('name')) {
-                            document.getElementById('name').value = data['Name'];
-                        }
-                        if (document.getElementById('status')) {
-                            document.getElementById('status').value = data['Status'];
-                        }
-
-                        if (document.getElementById('allocationStartDate')) {
-                            document.getElementById('allocationStartDate').value = data['Allocation Start Date'];
-                        }
-                        if (document.getElementById('onOff')) {
-                            document.getElementById('onOff').value = data['On/Off'] ;
-                        }
-                        if (document.getElementById('location')) {
-                            document.getElementById('location').value = data['Location'];
-                        }
-                        if (document.getElementById('designation')) {
-                            document.getElementById('designation').value = data['Designation'];
-                        }
-                        if (document.getElementById('billable')) {
-                            document.getElementById('billable').value = data['Billable'];
-                        }
-                        if (document.getElementById('billingStartDate')) {
-                            document.getElementById('billingStartDate').value = data['Billing Start Date'];
-                        }
-                        if (document.getElementById('allocationEndDate')) {
-                            document.getElementById('allocationEndDate').value = data['Allocation End Date'];
-                        }
-                        if (document.getElementById('billingEndDate')) {
-                            document.getElementById('billingEndDate').value = data['Billing End Date'];
-                        }
-                        if (document.getElementById('billingRate')) {
-                            document.getElementById('billingRate').value = data['Billing Rate'];
-                        }
-                        if (document.getElementById('department')) {
-                            document.getElementById('department').value = data['Department'];
-                        }
-                        if (document.getElementById('homeManagerId')) {
-                            document.getElementById('homeManagerId').value = data['Home Manager ID'];
-                        }
-                        if (document.getElementById('homeManagerName')) {
-                            document.getElementById('homeManagerName').value = data['Home Manager Name'];
-                        }
-                        if (document.getElementById('projectPoc')) {
-                            document.getElementById('projectPoc').value = data['Project POC'];
-                        }
-                        if (document.getElementById('requisitionSowContractNumber')) {
-                            document.getElementById('requisitionSowContractNumber').value = data['Requisition/SOW Contract Number'];
-                        }
-                        if (document.getElementById('zId')) {
-                            document.getElementById('zId').value = data['Z-ID'];
-                        }
-                        if (document.getElementById('allyTrack')) {
-                            document.getElementById('allyTrack').value = data['Ally Track'];
-                        }
-                        if (document.getElementById('subTrack')) {
-                            document.getElementById('subTrack').value = data['Sub Track'];
-                        }
-                        if (document.getElementById('integratedProject')) {
-                            document.getElementById('integratedProject').value = data['Integrated Project'];
-                        }
-                        if (document.getElementById('onsiteOnlyProject')) {
-                            document.getElementById('onsiteOnlyProject').value = data['Onsite Only Project'];
-                        }
-                        if (document.getElementById('offshoreOnlyProject')) {
-                            document.getElementById('offshoreOnlyProject').value = data['Offshore Only Project'];
-                        }
-                        if (document.getElementById('onsiteOffshoreProject')) {
-                            document.getElementById('onsiteOffshoreProject').value = data['Onsite + Offshore Project'];
-                        }
-                        if (document.getElementById('engagementManager')) {
-                            document.getElementById('engagementManager').value = data['Engagement Manager'];
-                        }
-                        if (document.getElementById('alternateEngagementManager')) {
-                            document.getElementById('alternateEngagementManager').value = data['Alternate Engagement Manager'];
-                        }
-                        if (document.getElementById('director')) {
-                            document.getElementById('director').value = data['Director'];
-                        }
-                        if (document.getElementById('execLead')) {
-                            document.getElementById('execLead').value = data['Exec Lead'];
-                        }
-                        if (document.getElementById('allyCio')) {
-                            document.getElementById('allyCio').value = data['Ally CIO'];
-                        }
-                        if (document.getElementById('lob')) {
-                            document.getElementById('lob').value = data['LoB'];
-                        }
-                        if (document.getElementById('allyMailId')) {
-                            document.getElementById('allyMailId').value = data['Ally Mail ID'];
-                        }
-                        if (document.getElementById('cognizantEmailId')) {
-                            document.getElementById('cognizantEmailId').value = data['Cognizant Email ID'];
-                        }
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        });
+        function getFormFields() {
+            return [
+                'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+                'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'billingRate', 'department',
+                'homeManagerId', 'homeManagerName', 'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack',
+                'subTrack', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject',
+                'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 'lob', 'allyMailId',
+                'cognizantEmailId'
+            ];
+        }
     </script>
 </body>
 
 </html>
+
