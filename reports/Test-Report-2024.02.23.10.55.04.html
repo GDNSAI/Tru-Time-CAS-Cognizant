@@ -7,18 +7,20 @@ document.getElementById('editBtn').addEventListener('click', function (event) {
         return;
     }
     
-    // Always fetch CURRENT record for editing
+    // Fetch only CURRENT records
     fetch(`/fetch-data?associateId=${associateId}&status=Current`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                populateFormData(data);
-                document.getElementById('status').value = 'Current'; // Force status to Current
-            }
+        .then(response => {
+            if (!response.ok) throw new Error('Record not found');
+            return response.json();
         })
-        .catch(error => console.error('Error:', error));
+        .then(data => {
+            populateFormData(data);
+            document.getElementById('status').value = 'Current';
+        })
+        .catch(error => {
+            alert(`No current record found for ID ${associateId}`);
+            clearForm();
+        });
 });
 
 document.getElementById('getBtn').addEventListener('click', function (event) {
@@ -31,22 +33,25 @@ document.getElementById('getBtn').addEventListener('click', function (event) {
         return;
     }
     
-    // Fetch based on selected status
     fetch(`/fetch-data?associateId=${associateId}&status=${status}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                populateFormData(data);
-            }
+        .then(response => {
+            if (!response.ok) throw new Error('Record not found');
+            return response.json();
         })
-        .catch(error => console.error('Error:', error));
+        .then(data => populateFormData(data))
+        .catch(error => {
+            alert(`No ${status.toLowerCase()} record found for ID ${associateId}`);
+            clearForm();
+        });
 });
 
 
 app.get('/fetch-data', (req, res) => {
     const { associateId, status } = req.query;
+    
+    if (!associateId || !status) {
+        return res.status(400).json({ error: 'Missing parameters' });
+    }
 
     const filePath = 'attendance.xlsx';
     if (!fs.existsSync(filePath)) {
@@ -57,12 +62,15 @@ app.get('/fetch-data', (req, res) => {
     const worksheet = workbook.Sheets['Sheet2'];
     const data = XLSX.utils.sheet_to_json(worksheet);
 
-    // Convert both to string for reliable comparison
+    // Exact match search with type conversion
     const record = data.find(row => 
         row['Associate ID'].toString() === associateId.toString() && 
         row['Status'] === status
     );
 
-    if (!record) return res.status(404).json({ error: 'Record not found' });
+    if (!record) {
+        return res.status(404).json({ error: 'Record not found' });
+    }
+    
     res.json(record);
 });
