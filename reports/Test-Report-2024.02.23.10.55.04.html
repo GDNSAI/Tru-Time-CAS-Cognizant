@@ -47,13 +47,8 @@ app.post('/submit', (req, res) => {
         data = XLSX.utils.sheet_to_json(worksheet);
     }
 
-    // Find the index of the existing record
-    const existingIndex = data.findIndex(row => row['Associate ID'] === associateId);
-
-    // Remove the existing record if it exists
-    if (existingIndex !== -1) {
-        data.splice(existingIndex, 1);
-    }
+    // Remove ALL existing records with this Associate ID
+    data = data.filter(row => row['Associate ID'] !== associateId);
 
     // Prepare the new row data
     const newRow = {
@@ -97,7 +92,7 @@ app.post('/submit', (req, res) => {
 
     // Add new row to appropriate position
     if (newRow.status === 'Historic') {
-        data.splice(0, 0, newRow); // Add to second position
+        data.splice(1, 0, newRow); // Add to second position
     } else {
         data.push(newRow); // Add to bottom
     }
