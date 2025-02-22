@@ -1,31 +1,40 @@
-document.getElementById('editBtn').addEventListener('click', function (event) {
+document.getElementById('editBtn').addEventListener('click', async (event) => {
     event.preventDefault();
-    const associateId = document.getElementById('associateId').value;
+    const associateId = document.getElementById('associateId').value.trim();
     
     if (!associateId) {
         alert('Please enter Associate ID');
         return;
     }
     
-    // Fetch only CURRENT records
-    fetch(`/fetch-data?associateId=${associateId}&status=Current`)
-        .then(response => {
-            if (!response.ok) throw new Error('Record not found');
-            return response.json();
-        })
-        .then(data => {
-            populateFormData(data);
-            document.getElementById('status').value = 'Current';
-        })
-        .catch(error => {
-            alert(`No current record found for ID ${associateId}`);
-            clearForm();
-        });
+    try {
+        const response = await fetch(`/fetch-data?associateId=${encodeURIComponent(associateId)}&status=Current`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error(`No current record found for ID ${associateId}`);
+            }
+            throw new Error('Server error');
+        }
+        
+        const data = await response.json();
+        
+        // Verify the received data matches the requested ID
+        if (data['Associate ID'].toString() !== associateId) {
+            throw new Error('Server returned mismatched record');
+        }
+        
+        populateFormData(data);
+        document.getElementById('status').value = 'Current';
+    } catch (error) {
+        alert(error.message);
+        clearForm();
+    }
 });
 
-document.getElementById('getBtn').addEventListener('click', function (event) {
+document.getElementById('getBtn').addEventListener('click', async (event) => {
     event.preventDefault();
-    const associateId = document.getElementById('associateId').value;
+    const associateId = document.getElementById('associateId').value.trim();
     const status = document.getElementById('status').value;
     
     if (!associateId) {
@@ -33,44 +42,71 @@ document.getElementById('getBtn').addEventListener('click', function (event) {
         return;
     }
     
-    fetch(`/fetch-data?associateId=${associateId}&status=${status}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Record not found');
-            return response.json();
-        })
-        .then(data => populateFormData(data))
-        .catch(error => {
-            alert(`No ${status.toLowerCase()} record found for ID ${associateId}`);
-            clearForm();
-        });
+    try {
+        const response = await fetch(`/fetch-data?associateId=${encodeURIComponent(associateId)}&status=${encodeURIComponent(status)}`);
+        
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error(`No ${status.toLowerCase()} record found for ID ${associateId}`);
+            }
+            throw new Error('Server error');
+        }
+        
+        const data = await response.json();
+        
+        // Strict ID match verification
+        if (data['Associate ID'].toString() !== associateId) {
+            throw new Error('Server returned mismatched record');
+        }
+        
+        populateFormData(data);
+    } catch (error) {
+        alert(error.message);
+        clearForm();
+    }
 });
 
 
 app.get('/fetch-data', (req, res) => {
     const { associateId, status } = req.query;
     
+    // Validate parameters
     if (!associateId || !status) {
-        return res.status(400).json({ error: 'Missing parameters' });
-    }
-
-    const filePath = 'attendance.xlsx';
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: 'File not found' });
-    }
-
-    const workbook = XLSX.readFile(filePath);
-    const worksheet = workbook.Sheets['Sheet2'];
-    const data = XLSX.utils.sheet_to_json(worksheet);
-
-    // Exact match search with type conversion
-    const record = data.find(row => 
-        row['Associate ID'].toString() === associateId.toString() && 
-        row['Status'] === status
-    );
-
-    if (!record) {
-        return res.status(404).json({ error: 'Record not found' });
+        return res.status(400).json({ error: 'Missing required parameters' });
     }
     
-    res.json(record);
+    // Clean and normalize inputs
+    const cleanId = associateId.toString().trim();
+    const cleanStatus = status.trim();
+    
+    // Validate ID format
+    if (!/^\d{7}$/.test(cleanId)) {
+        return res.status(400).json({ error: 'Invalid Associate ID format' });
+    }
+
+    try {
+        const workbook = XLSX.readFile('attendance.xlsx');
+        const worksheet = workbook.Sheets['Sheet2'];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+        
+        // Strict comparison with type conversion
+        const record = data.find(row => 
+            row['Associate ID'].toString().trim() === cleanId &&
+            row['Status'].trim() === cleanStatus
+        );
+        
+        if (!record) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+        
+        // Verify numeric ID match
+        if (record['Associate ID'].toString() !== cleanId) {
+            throw new Error('Data inconsistency detected');
+        }
+        
+        res.json(record);
+    } catch (error) {
+        console.error('Server error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
