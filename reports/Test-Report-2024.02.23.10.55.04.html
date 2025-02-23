@@ -1,5 +1,94 @@
-Missing required fields: billingRate, department, homeManagerId, homeManagerName, projectPoc, zId, integratedProject, onsiteOnlyProject, offshoreOnlyProject, onsiteOffshoreProject
-(index):558 
- 
- POST http://localhost:3000/submit 400 (Bad Request)
-(anonymous)	@	(index):558
+app.post('/submit', (req, res) => {
+    const { status } = req.body;
+    
+    // Dynamic required fields based on status
+    const alwaysRequired = [
+        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 
+        'location', 'onOff', 'billable', 'allocationStartDate', 'billingStartDate',
+        'allocationEndDate', 'billingEndDate', 'status', 'requisitionSowContractNumber',
+        'allyTrack', 'subTrack', 'engagementManager', 'alternateEngagementManager',
+        'director', 'execLead', 'lob', 'allyMailId', 'cognizantEmailId'
+    ];
+
+    const currentOnlyFields = [
+        'billingRate', 'department', 'homeManagerId', 'homeManagerName',
+        'projectPoc', 'zId', 'integratedProject', 'onsiteOnlyProject',
+        'offshoreOnlyProject', 'onsiteOffshoreProject', 'allyCio'
+    ];
+
+    const requiredFields = status === 'Current' 
+        ? [...alwaysRequired, ...currentOnlyFields]
+        : alwaysRequired;
+
+    // Check required fields
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    if (missingFields.length > 0) {
+        return res.status(400).json({ error: `Missing required fields: ${missingFields.join(', ')}` });
+    }
+
+    // Process historical records - clear current-only fields
+    const processedData = {
+        ...req.body,
+        ...(status === 'Historic' && {
+            billingRate: '',
+            department: '',
+            homeManagerId: '',
+            homeManagerName: '',
+            projectPoc: '',
+            zId: '',
+            integratedProject: '',
+            onsiteOnlyProject: '',
+            offshoreOnlyProject: '',
+            onsiteOffshoreProject: '',
+            allyCio: ''
+        })
+    };
+
+    // Rest of your Excel processing logic...
+    const newRow = {
+        'ESA Project ID': processedData.esaProjectId,
+        'ESA Project Name': processedData.esaProjectName,
+        // ... map all other fields similarly
+    };
+
+    // Continue with file handling...
+});
+
+function validateForm() {
+    const status = document.getElementById('status').value;
+    
+    const alwaysRequired = [
+        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation',
+        'location', 'onOff', 'billable', 'allocationStartDate', 'billingStartDate',
+        'allocationEndDate', 'billingEndDate', 'status', 'requisitionSowContractNumber',
+        'allyTrack', 'subTrack', 'engagementManager', 'alternateEngagementManager',
+        'director', 'execLead', 'lob', 'allyMailId', 'cognizantEmailId'
+    ];
+
+    const currentOnlyFields = [
+        'billingRate', 'department', 'homeManagerId', 'homeManagerName',
+        'projectPoc', 'zId', 'integratedProject', 'onsiteOnlyProject',
+        'offshoreOnlyProject', 'onsiteOffshoreProject', 'allyCio'
+    ];
+
+    const requiredFields = status === 'Current' 
+        ? [...alwaysRequired, ...currentOnlyFields]
+        : alwaysRequired;
+
+    // Rest of validation logic...
+}
+
+
+// Add styling for Historical rows
+data.forEach((row, index) => {
+    if (row.Status === 'Historic') {
+        headers.forEach((header, colIndex) => {
+            const cellRef = XLSX.utils.encode_cell({ r: index + 1, c: colIndex });
+            if (!worksheet[cellRef]) worksheet[cellRef] = { v: row[header] };
+            worksheet[cellRef].s = { 
+                font: { color: { rgb: 'FF0000' }, italic: true },
+                fill: { fgColor: { rgb: 'FFEEEE' } }
+            };
+        });
+    }
+});
