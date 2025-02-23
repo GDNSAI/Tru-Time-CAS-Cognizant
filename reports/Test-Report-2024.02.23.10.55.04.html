@@ -975,3 +975,9 @@ app.get('/fetch-data', (req, res) => {
 });
 
 app.listen(3000, () => console.log('Server running on port 3000'));
+
+Uncaught (in promise) TypeError: Cannot set properties of null (setting 'textContent')
+    at (index):726:46
+    at Array.forEach (<anonymous>)
+    at validateForm ((index):716:28)
+    at HTMLButtonElement.<anonymous> ((index):554:17)
