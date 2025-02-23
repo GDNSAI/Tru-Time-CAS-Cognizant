@@ -1,92 +1,51 @@
-// ... (previous code remains the same until the POST /submit route)
+function validateForm() {
+    let isValid = true;
+    const status = document.getElementById('status').value;
+    
+    // Correct variable name to lowercase 'fields'
+    const alwaysRequired = [ /*... your field names ...*/ ];
+    const currentOnlyFields = [ /*... your field names ...*/ ];
+    
+    const requiredFields = status === 'Current' 
+        ? [...alwaysRequired, ...currentOnlyFields] 
+        : alwaysRequired;
 
-app.post('/submit', (req, res) => {
-    // ... (destructuring remains the same)
+    requiredFields.forEach(field => {
+        const input = document.getElementById(field);
+        const errorElement = document.getElementById(`${field}Error`); // Get error element
 
-    // Process historical records - clear current-only fields FIRST
-    const processedData = {
-        ...req.body,
-        ...(status === 'Historic' && {
-            billingRate: '',
-            department: '',
-            homeManagerId: '',
-            homeManagerName: '',
-            projectPoc: '',
-            zId: '',
-            integratedProject: '',
-            onsiteOnlyProject: '',
-            offshoreOnlyProject: '',
-            onsiteOffshoreProject: '',
-            allyCio: ''
-        })
-    };
+        // 1. Check if element exists before using it
+        if (!input) {
+            console.error(`Missing input field: ${field}`);
+            isValid = false;
+            return;
+        }
 
-    // Prepare the new row data using processedData
-    const newRow = {
-        'ESA Project ID': processedData.esaProjectId,
-        'ESA Project Name': processedData.esaProjectName,
-        'Associate ID': processedData.associateId,
-        'Name': processedData.name,
-        'Designation': processedData.designation,
-        'Location': processedData.location,
-        'On/Off': processedData.onOff,
-        'Billable': processedData.billable,
-        'Allocation Start Date': processedData.allocationStartDate,
-        'Billing Start Date': processedData.billingStartDate,
-        'Allocation End Date': processedData.allocationEndDate,
-        'Billing End Date': processedData.billingEndDate,
-        'Billing Rate': processedData.billingRate,
-        'Department': processedData.department,
-        'Home Manager ID': processedData.homeManagerId,
-        'Home Manager Name': processedData.homeManagerName,
-        'Project POC': processedData.projectPoc,
-        'Status': processedData.status,
-        'Requisition/SOW Contract Number': processedData.requisitionSowContractNumber,
-        'Z-ID': processedData.zId,
-        'Ally Track': processedData.allyTrack,
-        'Sub Track': processedData.subTrack,
-        'Integrated Project': processedData.integratedProject,
-        'Onsite Only Project': processedData.onsiteOnlyProject,
-        'Offshore Only Project': processedData.offshoreOnlyProject,
-        'Onsite + Offshore Project': processedData.onsiteOffshoreProject,
-        'Engagement Manager': processedData.engagementManager,
-        'Alternate Engagement Manager': processedData.alternateEngagementManager,
-        'Director': processedData.director,
-        'Exec Lead': processedData.execLead,
-        'Ally CIO': processedData.allyCio,
-        'LoB': processedData.lob,
-        'Ally Mail ID': processedData.allyMailId,
-        'Cognizant Email ID': processedData.cognizantEmailId,
-        _statusColor: processedData.status === 'Historic' ? 'red' : 'black'
-    };
+        // 2. Check for empty values
+        if (!input.value.trim()) {
+            input.classList.add("invalid");
+            if (errorElement) {
+                errorElement.textContent = `${field} is required.`; // Fixed message
+            }
+            isValid = false;
+        } else {
+            input.classList.remove("invalid");
+            if (errorElement) {
+                errorElement.textContent = '';
+            }
+        }
 
-    // Read existing data and ensure headers
-    if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets['Sheet2'];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        data = jsonData.map(row => {
-            const ensuredRow = {};
-            headers.forEach(header => {
-                ensuredRow[header] = row[header] !== undefined ? row[header] : '';
-            });
-            return ensuredRow;
-        });
-    }
-
-    // ... (rest of the code remains the same)
-});
-
-// In validateForm function
-errorElement.textContent = `${field} is required.`; // Fixed fieldName to field
-
-// Updated collectFormData function
-function collectFormData() {
-    const fields = getFormFields();
-    const data = {};
-    fields.forEach(field => {
-        const element = document.getElementById(field);
-        data[field] = element.value;
+        // 3. Add field-specific validations
+        if (field === 'associateId' && status === 'Current') {
+            if (!/^\d{7}$/.test(input.value)) {
+                input.classList.add("invalid");
+                if (errorElement) {
+                    errorElement.textContent = "Must be 7 digits";
+                }
+                isValid = false;
+            }
+        }
     });
-    return data;
+
+    return isValid;
 }
