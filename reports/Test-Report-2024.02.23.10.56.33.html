@@ -1,27 +1,113 @@
+function validateForm() {
+    let isValid = true;
+    const status = document.getElementById('status').value;
+    
+    // Define required fields based on status
+    const currentRequired = getFormFields();
+    const historicRequired = currentRequired.filter(field => 
+        !['billingRate', 'department', 'homeManagerId', 'homeManagerName', 
+          'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 
+          'onsiteOffshoreProject'].includes(field)
+    );
+
+    const requiredFields = status === 'Historic' ? historicRequired : currentRequired;
+
+    requiredFields.forEach(field => {
+        const input = document.getElementById(field);
+        const errorElement = document.getElementById(`${field}Error`);
+        if (input && errorElement) {
+            if (!input.value) {
+                input.classList.add("invalid");
+                errorElement.textContent = `${field.replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())} is required.`;
+                isValid = false;
+            } else {
+                input.classList.remove("invalid");
+                errorElement.textContent = '';
+            }
+        }
+    });
+
+    // Validate lengths only for Current status
+    if (status === 'Current') {
+        isValid = validateFieldLength("associateId", 7, "Associate ID must be 7 digits.") && isValid;
+        isValid = validateFieldLength("homeManagerId", 7, "Home Manager ID must be 7 digits.") && isValid;
+    }
+
+    return isValid;
+}
+
+
 app.post('/submit', (req, res) => {
-    // ... (existing validation code remains the same)
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ error: 'Status is required' });
 
-    // Read existing data if the file exists
-    if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets['Sheet2'];
-        data = XLSX.utils.sheet_to_json(worksheet);
+    // Define required fields based on status
+    const currentRequired = [
+        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 
+        'onOff', 'billable', 'allocationStartDate', 'billingStartDate', 'allocationEndDate', 
+        'billingEndDate', 'billingRate', 'department', 'homeManagerId', 'homeManagerName', 
+        'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack', 'subTrack', 
+        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject', 
+        'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 
+        'lob', 'allyMailId', 'cognizantEmailId'
+    ];
+
+    const historicRequired = currentRequired.filter(field => 
+        !['billingRate', 'department', 'homeManagerId', 'homeManagerName', 
+          'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 
+          'onsiteOffshoreProject'].includes(field)
+    );
+
+    const requiredFields = status === 'Current' ? currentRequired : historicRequired;
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+
+    if (missingFields.length > 0) {
+        return res.status(400).json({ 
+            error: `Missing required fields: ${missingFields.join(', ')}` 
+        });
     }
 
-    // Remove ALL existing records with this Associate ID
-    data = data.filter(row => row['Associate ID'] !== associateId);
+    // Rest of your existing code for Excel handling
+    // ...
+});
 
-    // Prepare the new row data
-    const newRow = {
-        // ... (existing newRow definition remains the same)
-    };
+document.getElementById('status').addEventListener('change', function() {
+    if (this.value === 'Historic') {
+        // Clear specified fields
+        ['billingRate', 'department', 'homeManagerId', 'homeManagerName', 
+         'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 
+         'onsiteOffshoreProject'].forEach(field => {
+            document.getElementById(field).value = '';
+        });
+    }
+});
 
-    // Add new row to appropriate position
-    if (newRow.status === 'Historic') {
-        data.unshift(newRow); // Add to top of array
-    } else {
-        data.push(newRow); // Add to bottom
+document.getElementById("submitBtn").addEventListener("click", async () => {
+    if (!validateForm()) {
+        alert("Please correct the highlighted fields.");
+        return;
     }
 
-    // ... (rest of the worksheet creation and file saving code remains the same)
+    try {
+        const data = collectFormData();
+        const response = await fetch('/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to save data');
+        }
+
+        const result = await response.json();
+        alert(result.message);
+        if (data.status === 'Historic') clearForm();
+        
+    } catch (error) {
+        console.error("Error:", error);
+        alert(error.message || "An unexpected error occurred");
+    }
 });
