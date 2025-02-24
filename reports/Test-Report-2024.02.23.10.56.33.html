@@ -1,66 +1,74 @@
 function validateForm() {
     let isValid = true;
+    const requiredFields = getFormFields();
     const status = document.getElementById('status').value;
-    
-    // Define required fields based on status
-    const currentRequired = getFormFields();
-    const historicRequired = currentRequired.filter(field => 
-        !['billingRate', 'department', 'homeManagerId', 'homeManagerName', 
-          'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 
-          'onsiteOffshoreProject'].includes(field)
-    );
+    const isHistoric = status === 'Historic';
 
-    const requiredFields = status === 'Historic' ? historicRequired : currentRequired;
+    // Fields optional for historic records
+    const optionalForHistoric = [
+        'billingRate', 'department', 'homeManagerId', 'homeManagerName',
+        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
+    ];
 
     requiredFields.forEach(field => {
         const input = document.getElementById(field);
         const errorElement = document.getElementById(`${field}Error`);
-        if (input && errorElement) {
-            if (!input.value) {
-                input.classList.add("invalid");
-                errorElement.textContent = `${field.replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, str => str.toUpperCase())} is required.`;
-                isValid = false;
-            } else {
-                input.classList.remove("invalid");
-                errorElement.textContent = '';
-            }
+        
+        if (!input || !errorElement) return;
+
+        // Skip validation for optional historic fields
+        if (isHistoric && optionalForHistoric.includes(field)) {
+            input.classList.remove("invalid");
+            errorElement.textContent = '';
+            return;
+        }
+
+        // Validate required fields
+        if (!input.value.trim()) {
+            input.classList.add("invalid");
+            errorElement.textContent = `${field.replace(/([A-Z])/g, ' $1').trim()} is required.`;
+            isValid = false;
+        } else {
+            input.classList.remove("invalid");
+            errorElement.textContent = '';
         }
     });
 
-    // Validate lengths only for Current status
-    if (status === 'Current') {
-        isValid = validateFieldLength("associateId", 7, "Associate ID must be 7 digits.") && isValid;
-        isValid = validateFieldLength("homeManagerId", 7, "Home Manager ID must be 7 digits.") && isValid;
-    }
+    // Validate field lengths
+    if (!validateFieldLength("associateId", 7, "Associate ID must be 7 digits.")) isValid = false;
+    if (!isHistoric && !validateFieldLength("homeManagerId", 7, "Home Manager ID must be 7 digits.")) isValid = false;
 
     return isValid;
 }
 
 
 app.post('/submit', (req, res) => {
-    const { status } = req.body;
-    if (!status) return res.status(400).json({ error: 'Status is required' });
+    const data = req.body;
+    const status = data.status;
 
     // Define required fields based on status
-    const currentRequired = [
-        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 
-        'onOff', 'billable', 'allocationStartDate', 'billingStartDate', 'allocationEndDate', 
-        'billingEndDate', 'billingRate', 'department', 'homeManagerId', 'homeManagerName', 
-        'projectPoc', 'status', 'requisitionSowContractNumber', 'zId', 'allyTrack', 'subTrack', 
-        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject', 
-        'engagementManager', 'alternateEngagementManager', 'director', 'execLead', 'allyCio', 
-        'lob', 'allyMailId', 'cognizantEmailId'
+    const allFields = [
+        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 
+        'location', 'onOff', 'billable', 'allocationStartDate', 'billingStartDate', 
+        'allocationEndDate', 'billingEndDate', 'status', 'requisitionSowContractNumber', 
+        'zId', 'allyTrack', 'subTrack', 'engagementManager', 'alternateEngagementManager', 
+        'director', 'execLead', 'allyCio', 'lob', 'allyMailId', 'cognizantEmailId', 'projectPoc'
     ];
 
-    const historicRequired = currentRequired.filter(field => 
-        !['billingRate', 'department', 'homeManagerId', 'homeManagerName', 
-          'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 
-          'onsiteOffshoreProject'].includes(field)
-    );
+    const optionalForHistoric = [
+        'billingRate', 'department', 'homeManagerId', 'homeManagerName',
+        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
+    ];
 
-    const requiredFields = status === 'Current' ? currentRequired : historicRequired;
-    const missingFields = requiredFields.filter(field => !req.body[field]);
+    // Validate required fields
+    let missingFields = [];
+    if (status === 'Historic') {
+        missingFields = allFields.filter(field => !data[field] || data[field].toString().trim() === '');
+    } else {
+        missingFields = [...allFields, ...optionalForHistoric].filter(field => 
+            !data[field] || data[field].toString().trim() === ''
+        );
+    }
 
     if (missingFields.length > 0) {
         return res.status(400).json({ 
@@ -68,46 +76,23 @@ app.post('/submit', (req, res) => {
         });
     }
 
-    // Rest of your existing code for Excel handling
-    // ...
+    // Rest of your existing save logic...
 });
+function collectFormData() {
+    const fields = getFormFields();
+    const data = {};
+    fields.forEach(field => {
+        data[field] = document.getElementById(field).value;
+    });
 
-document.getElementById('status').addEventListener('change', function() {
-    if (this.value === 'Historic') {
-        // Clear specified fields
+    // Clear specific fields if status is Historic
+    if (data.status === 'Historic') {
         ['billingRate', 'department', 'homeManagerId', 'homeManagerName', 
          'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 
          'onsiteOffshoreProject'].forEach(field => {
-            document.getElementById(field).value = '';
+            data[field] = '';
         });
     }
-});
 
-document.getElementById("submitBtn").addEventListener("click", async () => {
-    if (!validateForm()) {
-        alert("Please correct the highlighted fields.");
-        return;
-    }
-
-    try {
-        const data = collectFormData();
-        const response = await fetch('/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to save data');
-        }
-
-        const result = await response.json();
-        alert(result.message);
-        if (data.status === 'Historic') clearForm();
-        
-    } catch (error) {
-        console.error("Error:", error);
-        alert(error.message || "An unexpected error occurred");
-    }
-});
+    return data;
+}
