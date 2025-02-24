@@ -716,14 +716,6 @@
             fields.forEach(field => {
                 data[field] = document.getElementById(field).value;
             });
-
-            // Clear specific fields if status is Historic
-            if (data.status === 'Historic') {
-                ['billingRate', 'department', 'homeManagerId', 'homeManagerName', 'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'].forEach(field => {
-                    data[field] = '';
-                });
-            }
-
             return data;
         }
 
@@ -798,6 +790,32 @@ app.post('/submit', (req, res) => {
         'Cognizant Email ID'
     ];
     let data = [];
+    // Common required fields for all statuses
+    const baseRequiredFields = [
+        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+        'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'status',
+        'requisitionSowContractNumber', 'zId', 'allyTrack', 'subTrack', 'engagementManager',
+        'alternateEngagementManager', 'director', 'execLead', 'lob', 'allyMailId', 'cognizantEmailId'
+    ];
+
+    // Additional fields required only for Current status
+    const currentRequiredFields = [
+        'billingRate', 'department', 'homeManagerId', 'homeManagerName',
+        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
+    ];
+
+    // Validate fields based on status
+    const missingFields = baseRequiredFields
+        .concat(status === 'Current' ? currentRequiredFields : [])
+        .filter(field => !rest[field]);
+
+    if (missingFields.length > 0) {
+        return res.status(400).json({ 
+            error: 'Missing required fields',
+            missingFields: missingFields
+        });
+    }
+
 
     // Read existing data if the file exists
     if (fs.existsSync(filePath)) {
@@ -920,4 +938,8 @@ app.get('/fetch-data', (req, res) => {
 app.listen(3000, () => console.log('Server running on port 3000'));
 
 
-whenever I am giving associate ID and click on a button it gives the current current data so I am changing my status into history and while submitting I am getting an error all fields are required
+(index):557 
+ 
+ POST http://localhost:3000/submit 500 (Internal Server Error)
+(index):573 
+ Error: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
