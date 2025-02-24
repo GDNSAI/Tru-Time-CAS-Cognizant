@@ -1,98 +1,41 @@
-function validateForm() {
-    let isValid = true;
-    const requiredFields = getFormFields();
-    const status = document.getElementById('status').value;
-    const isHistoric = status === 'Historic';
-
-    // Fields optional for historic records
-    const optionalForHistoric = [
-        'billingRate', 'department', 'homeManagerId', 'homeManagerName',
-        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
-    ];
-
-    requiredFields.forEach(field => {
-        const input = document.getElementById(field);
-        const errorElement = document.getElementById(`${field}Error`);
-        
-        if (!input || !errorElement) return;
-
-        // Skip validation for optional historic fields
-        if (isHistoric && optionalForHistoric.includes(field)) {
-            input.classList.remove("invalid");
-            errorElement.textContent = '';
-            return;
-        }
-
-        // Validate required fields
-        if (!input.value.trim()) {
-            input.classList.add("invalid");
-            errorElement.textContent = `${field.replace(/([A-Z])/g, ' $1').trim()} is required.`;
-            isValid = false;
-        } else {
-            input.classList.remove("invalid");
-            errorElement.textContent = '';
-        }
-    });
-
-    // Validate field lengths
-    if (!validateFieldLength("associateId", 7, "Associate ID must be 7 digits.")) isValid = false;
-    if (!isHistoric && !validateFieldLength("homeManagerId", 7, "Home Manager ID must be 7 digits.")) isValid = false;
-
-    return isValid;
-}
-
-
 app.post('/submit', (req, res) => {
-    const data = req.body;
-    const status = data.status;
+    const { status, ...rest } = req.body;
 
-    // Define required fields based on status
-    const allFields = [
-        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 
-        'location', 'onOff', 'billable', 'allocationStartDate', 'billingStartDate', 
-        'allocationEndDate', 'billingEndDate', 'status', 'requisitionSowContractNumber', 
-        'zId', 'allyTrack', 'subTrack', 'engagementManager', 'alternateEngagementManager', 
-        'director', 'execLead', 'allyCio', 'lob', 'allyMailId', 'cognizantEmailId', 'projectPoc'
+    // Common required fields for all statuses
+    const baseRequiredFields = [
+        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
+        'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'status',
+        'requisitionSowContractNumber', 'zId', 'allyTrack', 'subTrack', 'engagementManager',
+        'alternateEngagementManager', 'director', 'execLead', 'lob', 'allyMailId', 'cognizantEmailId'
     ];
 
-    const optionalForHistoric = [
+    // Additional fields required only for Current status
+    const currentRequiredFields = [
         'billingRate', 'department', 'homeManagerId', 'homeManagerName',
         'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
     ];
 
-    // Validate required fields
-    let missingFields = [];
-    if (status === 'Historic') {
-        missingFields = allFields.filter(field => !data[field] || data[field].toString().trim() === '');
-    } else {
-        missingFields = [...allFields, ...optionalForHistoric].filter(field => 
-            !data[field] || data[field].toString().trim() === ''
-        );
-    }
+    // Validate fields based on status
+    const missingFields = baseRequiredFields
+        .concat(status === 'Current' ? currentRequiredFields : [])
+        .filter(field => !rest[field]);
 
     if (missingFields.length > 0) {
         return res.status(400).json({ 
-            error: `Missing required fields: ${missingFields.join(', ')}` 
+            error: 'Missing required fields',
+            missingFields: missingFields
         });
     }
 
-    // Rest of your existing save logic...
+    // ... rest of your existing code ...
 });
+
+
 function collectFormData() {
     const fields = getFormFields();
     const data = {};
     fields.forEach(field => {
         data[field] = document.getElementById(field).value;
     });
-
-    // Clear specific fields if status is Historic
-    if (data.status === 'Historic') {
-        ['billingRate', 'department', 'homeManagerId', 'homeManagerName', 
-         'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 
-         'onsiteOffshoreProject'].forEach(field => {
-            data[field] = '';
-        });
-    }
-
     return data;
 }
