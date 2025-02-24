@@ -1,41 +1,100 @@
-app.post('/submit', (req, res) => {
-    const { status, ...rest } = req.body;
+app.post('/submit', async (req, res) => {
+    try {
+        const data = req.body;
+        
+        // Validate required fields based on status
+        const requiredFields = [
+            'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation',
+            'location', 'onOff', 'billable', 'allocationStartDate', 'billingStartDate',
+            'allocationEndDate', 'billingEndDate', 'status', 'requisitionSowContractNumber',
+            'zId', 'allyTrack', 'subTrack', 'engagementManager', 'alternateEngagementManager',
+            'director', 'execLead', 'lob', 'allyMailId', 'cognizantEmailId'
+        ];
 
-    // Common required fields for all statuses
-    const baseRequiredFields = [
-        'esaProjectId', 'esaProjectName', 'associateId', 'name', 'designation', 'location', 'onOff', 'billable',
-        'allocationStartDate', 'billingStartDate', 'allocationEndDate', 'billingEndDate', 'status',
-        'requisitionSowContractNumber', 'zId', 'allyTrack', 'subTrack', 'engagementManager',
-        'alternateEngagementManager', 'director', 'execLead', 'lob', 'allyMailId', 'cognizantEmailId'
-    ];
+        if (data.status === 'Current') {
+            requiredFields.push(
+                'billingRate', 'department', 'homeManagerId', 'homeManagerName',
+                'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
+            );
+        }
 
-    // Additional fields required only for Current status
-    const currentRequiredFields = [
-        'billingRate', 'department', 'homeManagerId', 'homeManagerName',
-        'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
-    ];
+        const missingFields = requiredFields.filter(field => !data[field]);
+        if (missingFields.length > 0) {
+            return res.status(400).json({ 
+                error: 'Missing required fields',
+                missingFields: missingFields
+            });
+        }
 
-    // Validate fields based on status
-    const missingFields = baseRequiredFields
-        .concat(status === 'Current' ? currentRequiredFields : [])
-        .filter(field => !rest[field]);
+        const filePath = 'attendance.xlsx';
+        let existingData = [];
 
-    if (missingFields.length > 0) {
-        return res.status(400).json({ 
-            error: 'Missing required fields',
-            missingFields: missingFields
+        // Read existing data if file exists
+        if (fs.existsSync(filePath)) {
+            const workbook = XLSX.readFile(filePath);
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]]; // Get first sheet
+            existingData = XLSX.utils.sheet_to_json(worksheet);
+        }
+
+        // Remove existing Current records for this Associate ID
+        existingData = existingData.filter(row => 
+            row['Associate ID'].toString() !== data.associateId || row['Status'] !== 'Current'
+        );
+
+        // Create new data entry
+        const newEntry = {};
+        requiredFields.forEach(field => newEntry[field] = data[field]);
+
+        // Add to appropriate position
+        if (data.status === 'Historic') {
+            existingData.unshift(newEntry);
+        } else {
+            existingData.push(newEntry);
+        }
+
+        // Create new workbook
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(existingData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'EmployeeData');
+        
+        // Write file
+        XLSX.writeFile(workbook, filePath);
+
+        res.json({ 
+            success: true,
+            message: data.status === 'Historic' 
+                ? "Historic record added successfully!" 
+                : "Record updated successfully!"
+        });
+
+    } catch (error) {
+        console.error('Server Error:', error);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: error.message 
         });
     }
-
-    // ... rest of your existing code ...
 });
 
-
-function collectFormData() {
-    const fields = getFormFields();
-    const data = {};
-    fields.forEach(field => {
-        data[field] = document.getElementById(field).value;
+function validateForm() {
+    let isValid = true;
+    const status = document.getElementById('status').value;
+    const requiredFields = getFormFields().filter(field => {
+        // Conditionally exclude fields based on status
+        if (status === 'Historic') {
+            return ![
+                'billingRate', 'department', 'homeManagerId', 'homeManagerName',
+                'integratedProject', 'onsiteOnlyProject', 'offshoreOnlyProject', 'onsiteOffshoreProject'
+            ].includes(field);
+        }
+        return true;
     });
-    return data;
+
+    requiredFields.forEach(field => {
+        const input = document.getElementById(field);
+        const errorElement = document.getElementById(`${field}Error`);
+        // ... rest of validation logic
+    });
+    
+    return isValid;
 }
