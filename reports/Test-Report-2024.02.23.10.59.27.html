@@ -1,171 +1,115 @@
-<style>
-    #suggestions {
-        position: absolute;
-        background: white;
-        border: 1px solid #ddd;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        width: 300px;
-        display: none;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .suggestion-item {
-        padding: 8px 12px;
-        cursor: pointer;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-    }
-    .suggestion-item:hover {
-        background-color: #f5f5f5;
-    }
-    .suggestion-id { color: #666; font-size: 0.9em; }
-    .suggestion-status {
-        font-size: 0.8em;
-        padding: 2px 6px;
-        border-radius: 3px;
-        background: #e0e0e0;
-    }
-</style>
+app.get('/fetch-data', (req, res) => {
+    const { associateId, status } = req.query;
 
+    if (!associateId || !status) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+    }
 
-<div class="form-group">
-    <label for="associateId">Associate ID:</label>
-    <input type="number" id="associateId" placeholder="4165772" required autocomplete="off">
-    <div class="error-message" id="associateIdError"></div>
-</div>
-<div id="suggestions"></div>
-
-
-app.get('/associates', (req, res) => {
     try {
-        const filePath = 'attendance.xlsx';
-        if (!fs.existsSync(filePath)) return res.json([]);
-        
-        const workbook = XLSX.readFile(filePath);
+        const workbook = XLSX.readFile('attendance.xlsx');
         const worksheet = workbook.Sheets['Sheet2'];
         const data = XLSX.utils.sheet_to_json(worksheet);
-        
-        const associates = data.map(row => ({
-            associateId: row['Associate ID'].toString(),
-            name: row['Name'],
-            status: row['Status']
-        }));
-        
-        res.json(associates);
+
+        // Map Excel column names to form field names
+        const fieldMap = {
+            'ESA Project ID': 'esaProjectId',
+            'ESA Project Name': 'esaProjectName',
+            'Associate ID': 'associateId',
+            'Name': 'name',
+            'Designation': 'designation',
+            'Location': 'location',
+            'On/Off': 'onOff',
+            'Billable': 'billable',
+            'Allocation Start Date': 'allocationStartDate',
+            'Billing Start Date': 'billingStartDate',
+            'Allocation End Date': 'allocationEndDate',
+            'Billing End Date': 'billingEndDate',
+            'Billing Rate': 'billingRate',
+            'Department': 'department',
+            'Home Manager ID': 'homeManagerId',
+            'Home Manager Name': 'homeManagerName',
+            'Project POC': 'projectPoc',
+            'Status': 'status',
+            'Requisition/SOW Contract Number': 'requisitionSowContractNumber',
+            'Z-ID': 'zId',
+            'Ally Track': 'allyTrack',
+            'Sub Track': 'subTrack',
+            'Integrated Project': 'integratedProject',
+            'Onsite Only Project': 'onsiteOnlyProject',
+            'Offshore Only Project': 'offshoreOnlyProject',
+            'Onsite + Offshore Project': 'onsiteOffshoreProject',
+            'Engagement Manager': 'engagementManager',
+            'Alternate Engagement Manager': 'alternateEngagementManager',
+            'Director': 'director',
+            'Exec Lead': 'execLead',
+            'Ally CIO': 'allyCio',
+            'LoB': 'lob',
+            'Ally Mail ID': 'allyMailId',
+            'Cognizant Email ID': 'cognizantEmailId'
+        };
+
+        const record = data.find(row => 
+            row['Associate ID'].toString().trim() === associateId.toString().trim() &&
+            row['Status'].trim().toLowerCase() === status.toLowerCase().trim()
+        );
+
+        if (!record) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+
+        // Map Excel columns to form fields
+        const mappedRecord = {};
+        Object.entries(record).forEach(([excelKey, value]) => {
+            const formField = fieldMap[excelKey];
+            if (formField) {
+                mappedRecord[formField] = value;
+            }
+        });
+
+        res.json(mappedRecord);
     } catch (error) {
-        console.error('Error fetching associates:', error);
+        console.error('Server error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 
-let allAssociates = [];
-let currentInputField = null;
-
-// Fetch associates on page load
-window.addEventListener('DOMContentLoaded', () => {
-    fetch('/associates')
-        .then(response => response.json())
-        .then(data => allAssociates = data)
-        .catch(error => console.error('Error loading associates:', error));
-});
-
-// Handle input events for both Associate ID and Name fields
-document.getElementById('associateId').addEventListener('input', handleInput);
-document.getElementById('name').addEventListener('input', handleInput);
-
-function handleInput(e) {
-    currentInputField = e.target.id;
-    const searchTerm = e.target.value.trim().toLowerCase();
-    
-    if (searchTerm.length === 0) {
-        hideSuggestions();
-        return;
-    }
-    
-    const filtered = allAssociates.filter(associate => {
-        const idMatch = associate.associateId.toLowerCase().includes(searchTerm);
-        const nameMatch = associate.name.toLowerCase().includes(searchTerm);
-        return currentInputField === 'associateId' ? idMatch : nameMatch;
-    });
-    
-    showSuggestions(filtered);
-}
-
-function showSuggestions(associates) {
-    const container = document.getElementById('suggestions');
-    container.innerHTML = '';
-    
-    associates.slice(0, 5).forEach(associate => {
-        const div = document.createElement('div');
-        div.className = 'suggestion-item';
-        div.innerHTML = `
-            <div>
-                <span class="suggestion-id">${associate.associateId}</span>
-                ${associate.name}
-            </div>
-            <span class="suggestion-status">${associate.status}</span>
-        `;
-        
-        div.addEventListener('click', () => selectSuggestion(associate));
-        container.appendChild(div);
-    });
-    
-    // Position dropdown
-    const inputRect = document.getElementById(currentInputField).getBoundingClientRect();
-    container.style.position = 'absolute';
-    container.style.top = `${inputRect.bottom + window.scrollY + 5}px`;
-    container.style.left = `${inputRect.left + window.scrollX}px`;
-    container.style.display = 'block';
-}
-
-function hideSuggestions() {
-    document.getElementById('suggestions').style.display = 'none';
-}
-
-function selectSuggestion(associate) {
-    document.getElementById('associateId').value = associate.associateId;
-    document.getElementById('name').value = associate.name;
-    document.getElementById('status').value = associate.status;
-    hideSuggestions();
-    
-    // Fetch full details
-    fetch(`/fetch-data?associateId=${encodeURIComponent(associate.associateId)}&status=${encodeURIComponent(associate.status)}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Record not found');
-            return response.json();
-        })
-        .then(data => populateFormData(data))
-        .catch(error => {
-            alert(error.message);
-            clearForm();
-        });
-}
-
-// Close suggestions when clicking outside
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('#suggestions') && !e.target.closest('#associateId') && !e.target.closest('#name')) {
-        hideSuggestions();
-    }
-});
-
-
-function fetchData(associateId, status) {
-    fetch(`/fetch-data?associateId=${encodeURIComponent(associateId)}&status=${encodeURIComponent(status)}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Record not found');
-            return response.json();
-        })
-        .then(data => {
-            if (data.associateId.toString() !== associateId || data.status !== status) {
-                throw new Error('Data mismatch error');
+function populateFormData(data) {
+    const fields = getFormFields();
+    fields.forEach((field) => {
+        const element = document.getElementById(field);
+        if (element) {
+            // Handle select elements
+            if (element.tagName === 'SELECT') {
+                const option = Array.from(element.options).find(
+                    opt => opt.value === data[field]
+                );
+                if (option) {
+                    option.selected = true;
+                } else {
+                    console.warn(`Option not found for ${field}:`, data[field]);
+                }
+            } 
+            // Handle date inputs
+            else if (element.type === 'date') {
+                element.value = data[field] ? formatDate(data[field]) : '';
             }
-            populateFormData(data);
-        })
-        .catch(error => {
-            alert(error.message);
-            clearForm();
-        });
+            // Handle all other inputs
+            else {
+                element.value = data[field] || '';
+            }
+        }
+    });
+}
+
+// Helper function to format Excel dates
+function formatDate(excelDate) {
+    if (typeof excelDate === 'number') {
+        // Convert Excel serial date to JS Date
+        const utcDays = Math.floor(excelDate - 25569);
+        const utcValue = utcDays * 86400 * 1000;
+        const date = new Date(utcValue);
+        return date.toISOString().split('T')[0];
+    }
+    return excelDate; // Return as-is if already string
 }
