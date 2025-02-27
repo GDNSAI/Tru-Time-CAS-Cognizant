@@ -8,84 +8,65 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// Define strict headers list
-const headers = [
-    'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location', 'On/Off', 'Billable',
-    'Allocation Start Date', 'Billing Start Date', 'Allocation End Date', 'Billing End Date', 'Billing Rate', 'Department',
-    'Home Manager ID', 'Home Manager Name', 'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track',
-    'Sub Track', 'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 'Onsite + Offshore Project',
-    'Engagement Manager', 'Alternate Engagement Manager', 'Director', 'Exec Lead', 'Ally CIO', 'LoB', 'Ally Mail ID',
-    'Cognizant Email ID'
-];
-
 app.post('/submit', (req, res) => {
-    // Validate all required fields
-    const missingFields = headers.filter(header => !req.body[header]);
-    if (missingFields.length > 0) {
-        return res.status(400).json({ error: `Missing fields: ${missingFields.join(', ')}` });
-    }
+    // ... validation and field extraction ...
 
-    const filePath = 'attendance.xlsx';
-    let data = [];
+    // Prepare new row without ...req.body and _statusColor
+    const newRow = {
+        'ESA Project ID': esaProjectId,
+        'ESA Project Name': esaProjectName,
+        'Associate ID': associateId,
+        'Name': name,
+        'Designation': designation,
+        'Location': location,
+        'On/Off': onOff,
+        'Billable': billable,
+        'Allocation Start Date': allocationStartDate,
+        'Billing Start Date': billingStartDate,
+        'Allocation End Date': allocationEndDate,
+        'Billing End Date': billingEndDate,
+        'Billing Rate': billingRate,
+        'Department': department,
+        'Home Manager ID': homeManagerId,
+        'Home Manager Name': homeManagerName,
+        'Project POC': projectPoc,
+        'Status': status,
+        'Requisition/SOW Contract Number': requisitionSowContractNumber,
+        'Z-ID': zId,
+        'Ally Track': allyTrack,
+        'Sub Track': subTrack,
+        'Integrated Project': integratedProject,
+        'Onsite Only Project': onsiteOnlyProject,
+        'Offshore Only Project': offshoreOnlyProject,
+        'Onsite + Offshore Project': onsiteOffshoreProject,
+        'Engagement Manager': engagementManager,
+        'Alternate Engagement Manager': alternateEngagementManager,
+        'Director': director,
+        'Exec Lead': execLead,
+        'Ally CIO': allyCio,
+        'LoB': lob,
+        'Ally Mail ID': allyMailId,
+        'Cognizant Email ID': cognizantEmailId
+    };
 
-    // Read and sanitize existing data
-    if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets['Sheet2'];
-        const rawData = XLSX.utils.sheet_to_json(worksheet);
-        
-        // Filter to keep only valid headers
-        data = rawData.map(row => {
-            return headers.reduce((acc, header) => {
-                acc[header] = row[header] || '';
-                return acc;
-            }, {});
-        });
-    }
+    // ... rest of data processing ...
 
-    // Remove current records with same Associate ID
-    data = data.filter(row => !(
-        row['Associate ID'] === req.body.associateId && 
-        row['Status'] === 'Current'
-    ));
-
-    // Create new row with only allowed headers
-    const newRow = headers.reduce((acc, header) => {
-        acc[header] = req.body[header];
-        return acc;
-    }, {});
-
-    // Add to appropriate position
-    newRow.Status === 'Historic' ? data.unshift(newRow) : data.push(newRow);
-
-    // Create worksheet with styling
-    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
-
-    // Apply red color to historic rows
+    // Update styling logic
     data.forEach((row, index) => {
-        if (row.Status === 'Historic') {
+        if (row['Status'] === 'Historic') {
             headers.forEach((header, colIndex) => {
                 const cellRef = XLSX.utils.encode_cell({ r: index + 1, c: colIndex });
-                worksheet[cellRef].s = { 
-                    font: { 
-                        color: { rgb: 'FF0000' },
-                        bold: true
-                    } 
-                };
+                if (!worksheet[cellRef]) worksheet[cellRef] = { v: row[header] };
+                worksheet[cellRef].s = { font: { color: { rgb: 'FF0000' } } };
             });
         }
     });
 
-    // Create workbook and save
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet2');
-    XLSX.writeFile(workbook, filePath);
-
-    res.json({ message: 'Data saved successfully!' });
+    // ... write to file and send response ...
 });
 
-// Keep the rest of your code (fetch-data endpoint and server setup) the same
+app.get('/fetch-data', (req, res) => {
+    // ... fetch logic (no changes needed here) ...
+});
+
 app.listen(3000, () => console.log('Server running on port 3000'));
-
-
-Missing fields: ESA Project ID, ESA Project Name, Associate ID, Name, Designation, Location, On/Off, Billable, Allocation Start Date, Billing Start Date, Allocation End Date, Billing End Date, Billing Rate, Department, Home Manager ID, Home Manager Name, Project POC, Status, Requisition/SOW Contract Number, Z-ID, Ally Track, Sub Track, Integrated Project, Onsite Only Project, Offshore Only Project, Onsite + Offshore Project, Engagement Manager, Alternate Engagement Manager, Director, Exec Lead, Ally CIO, LoB, Ally Mail ID, Cognizant Email ID
