@@ -1,101 +1,88 @@
-// Modified /submit endpoint
+const express = require('express');
+const bodyParser = require('body-parser');
+const XLSX = require('xlsx-js-style');
+const fs = require('fs');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(express.static('public'));
+
+// Define strict headers list
+const headers = [
+    'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location', 'On/Off', 'Billable',
+    'Allocation Start Date', 'Billing Start Date', 'Allocation End Date', 'Billing End Date', 'Billing Rate', 'Department',
+    'Home Manager ID', 'Home Manager Name', 'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track',
+    'Sub Track', 'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 'Onsite + Offshore Project',
+    'Engagement Manager', 'Alternate Engagement Manager', 'Director', 'Exec Lead', 'Ally CIO', 'LoB', 'Ally Mail ID',
+    'Cognizant Email ID'
+];
+
 app.post('/submit', (req, res) => {
-    // ... existing validation code ...
+    // Validate all required fields
+    const missingFields = headers.filter(header => !req.body[header]);
+    if (missingFields.length > 0) {
+        return res.status(400).json({ error: `Missing fields: ${missingFields.join(', ')}` });
+    }
+
+    const filePath = 'attendance.xlsx';
+    let data = [];
+
+    // Read and sanitize existing data
+    if (fs.existsSync(filePath)) {
+        const workbook = XLSX.readFile(filePath);
+        const worksheet = workbook.Sheets['Sheet2'];
+        const rawData = XLSX.utils.sheet_to_json(worksheet);
+        
+        // Filter to keep only valid headers
+        data = rawData.map(row => {
+            return headers.reduce((acc, header) => {
+                acc[header] = row[header] || '';
+                return acc;
+            }, {});
+        });
+    }
+
+    // Remove current records with same Associate ID
+    data = data.filter(row => !(
+        row['Associate ID'] === req.body.associateId && 
+        row['Status'] === 'Current'
+    ));
+
+    // Create new row with only allowed headers
+    const newRow = headers.reduce((acc, header) => {
+        acc[header] = req.body[header];
+        return acc;
+    }, {});
+
+    // Add to appropriate position
+    newRow.Status === 'Historic' ? data.unshift(newRow) : data.push(newRow);
 
     // Create worksheet with styling
     const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
 
     // Apply red color to historic rows
-    data.forEach((row, rowIndex) => {
+    data.forEach((row, index) => {
         if (row.Status === 'Historic') {
             headers.forEach((header, colIndex) => {
-                const cellAddress = XLSX.utils.encode_cell({ r: rowIndex + 1, c: colIndex });
-                if (!worksheet[cellAddress]) return;
-                
-                worksheet[cellAddress].s = worksheet[cellAddress].s || {};
-                worksheet[cellAddress].s.font = {
-                    ...worksheet[cellAddress].s.font,
-                    color: { rgb: "FF0000" }
+                const cellRef = XLSX.utils.encode_cell({ r: index + 1, c: colIndex });
+                worksheet[cellRef].s = { 
+                    font: { 
+                        color: { rgb: 'FF0000' },
+                        bold: true
+                    } 
                 };
             });
         }
     });
 
-    // ... rest of the file saving code ...
+    // Create workbook and save
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet2');
+    XLSX.writeFile(workbook, filePath);
+
+    res.json({ message: 'Data saved successfully!' });
 });
 
-
-app.get('/fetch-data', (req, res) => {
-    // ... existing validation code ...
-
-    try {
-        // ... existing file reading code ...
-        
-        // Convert Excel headers to camelCase
-        const record = data.find(row => 
-            row['Associate ID'].toString().trim() === cleanId &&
-            row['Status'].trim() === cleanStatus
-        );
-
-        if (!record) return res.status(404).json({ error: 'Record not found' });
-
-        // Convert Excel headers to camelCase keys
-        const cleanRecord = {
-            esaProjectId: record['ESA Project ID'],
-            esaProjectName: record['ESA Project Name'],
-            associateId: record['Associate ID'],
-            name: record['Name'],
-            designation: record['Designation'],
-            location: record['Location'],
-            onOff: record['On/Off'],
-            billable: record['Billable'],
-            allocationStartDate: record['Allocation Start Date'],
-            billingStartDate: record['Billing Start Date'],
-            allocationEndDate: record['Allocation End Date'],
-            billingEndDate: record['Billing End Date'],
-            billingRate: record['Billing Rate'],
-            department: record['Department'],
-            homeManagerId: record['Home Manager ID'],
-            homeManagerName: record['Home Manager Name'],
-            projectPoc: record['Project POC'],
-            status: record['Status'],
-            requisitionSowContractNumber: record['Requisition/SOW Contract Number'],
-            zId: record['Z-ID'],
-            allyTrack: record['Ally Track'],
-            subTrack: record['Sub Track'],
-            integratedProject: record['Integrated Project'],
-            onsiteOnlyProject: record['Onsite Only Project'],
-            offshoreOnlyProject: record['Offshore Only Project'],
-            onsiteOffshoreProject: record['Onsite + Offshore Project'],
-            engagementManager: record['Engagement Manager'],
-            alternateEngagementManager: record['Alternate Engagement Manager'],
-            director: record['Director'],
-            execLead: record['Exec Lead'],
-            allyCio: record['Ally CIO'],
-            lob: record['LoB'],
-            allyMailId: record['Ally Mail ID'],
-            cognizantEmailId: record['Cognizant Email ID']
-        };
-
-        res.json(cleanRecord);
-    } catch (error) {
-        console.error('Server error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-
-// Modified autocomplete setup
-const setupAutocomplete = (inputField, resultContainer, keyField) => {
-    inputField.addEventListener('input', async (e) => {
-        // ... existing code ...
-        resultContainer.innerHTML = results.map(result => `
-            <div 
-                data-id="${result.associateId}" 
-                data-status="${result.status}"
-            >
-                ${result.associateId} - ${result.name} (${result.status})
-            </div>
-        `).join('');
-    });
-};
+// Keep the rest of your code (fetch-data endpoint and server setup) the same
+app.listen(3000, () => console.log('Server running on port 3000'));
