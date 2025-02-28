@@ -1,250 +1,3 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const XLSX = require('xlsx-js-style');
-const fs = require('fs');
-
-const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-// Serve static files (HTML, CSS, JS)
-app.use(express.static('public'));
-
-app.post('/submit', (req, res) => {
-    const {
-        esaProjectId, esaProjectName, associateId, name, designation, location, onOff, billable,
-        allocationStartDate, billingStartDate, allocationEndDate, billingEndDate, billingRate, department,
-        homeManagerId, homeManagerName, projectPoc, status, requisitionSowContractNumber, zId, allyTrack,
-        subTrack, integratedProject, onsiteOnlyProject, offshoreOnlyProject, onsiteOffshoreProject,
-        engagementManager, alternateEngagementManager, director, execLead, allyCio, lob, allyMailId,
-        cognizantEmailId
-    } = req.body;
-
-    // Validate all required fields
-    if (!esaProjectId || !esaProjectName || !associateId || !name || !designation || !location || !onOff || !billable ||
-        !allocationStartDate || !billingStartDate || !allocationEndDate || !billingEndDate || !billingRate || !department ||
-        !homeManagerId || !homeManagerName || !projectPoc || !status || !requisitionSowContractNumber || !zId || !allyTrack ||
-        !subTrack || !integratedProject || !onsiteOnlyProject || !offshoreOnlyProject || !onsiteOffshoreProject ||
-        !engagementManager || !alternateEngagementManager || !director || !execLead || !lob || !allyMailId || !cognizantEmailId) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
-
-    const filePath = 'attendance.xlsx';
-    const headers = [
-        'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location', 'On/Off', 'Billable',
-        'Allocation Start Date', 'Billing Start Date', 'Allocation End Date', 'Billing End Date', 'Billing Rate', 'Department',
-        'Home Manager ID', 'Home Manager Name', 'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track',
-        'Sub Track', 'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 'Onsite + Offshore Project',
-        'Engagement Manager', 'Alternate Engagement Manager', 'Director', 'Exec Lead', 'Ally CIO', 'LoB', 'Ally Mail ID',
-        'Cognizant Email ID'
-    ];
-    let data = [];
-
-    // Read existing data if the file exists
-    if (fs.existsSync(filePath)) {
-        const workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets['Sheet2'];
-        data = XLSX.utils.sheet_to_json(worksheet);
-    }
-
-    // Remove only "Current" records with this Associate ID
-    data = data.filter(row => !(row['Associate ID'] === associateId && row['Status'] === 'Current'));
-
-    const newRow = {
-        'ESA Project ID': esaProjectId,
-        'ESA Project Name': esaProjectName,
-        'Associate ID': associateId,
-        'Name': name,
-        'Designation': designation,
-        'Location': location,
-        'On/Off': onOff,
-        'Billable': billable,
-        'Allocation Start Date': allocationStartDate,
-        'Billing Start Date': billingStartDate,
-        'Allocation End Date': allocationEndDate,
-        'Billing End Date': billingEndDate,
-        'Billing Rate': billingRate,
-        'Department': department,
-        'Home Manager ID': homeManagerId,
-        'Home Manager Name': homeManagerName,
-        'Project POC': projectPoc,
-        'Status': status,
-        'Requisition/SOW Contract Number': requisitionSowContractNumber,
-        'Z-ID': zId,
-        'Ally Track': allyTrack,
-        'Sub Track': subTrack,
-        'Integrated Project': integratedProject,
-        'Onsite Only Project': onsiteOnlyProject,
-        'Offshore Only Project': offshoreOnlyProject,
-        'Onsite + Offshore Project': onsiteOffshoreProject,
-        'Engagement Manager': engagementManager,
-        'Alternate Engagement Manager': alternateEngagementManager,
-        'Director': director,
-        'Exec Lead': execLead,
-        'Ally CIO': allyCio,
-        'LoB': lob,
-        'Ally Mail ID': allyMailId,
-        'Cognizant Email ID': cognizantEmailId
-    };
-
-    // Add new row to appropriate position
-    if (status === 'Historic') {
-        data.unshift(newRow); // Add to the top
-    } else {
-        data.push(newRow); // Add to the bottom
-    }
-
-    // Create worksheet with styling information
-    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
-
-    // Apply column styling and status-based formatting
-    data.forEach((row, rowIndex) => {
-        headers.forEach((header, colIndex) => {
-            const cellRef = XLSX.utils.encode_cell({ r: rowIndex , c: colIndex });
-            if (!worksheet[cellRef]) worksheet[cellRef] = { v: row[header] };
-
-            // Initialize cell style
-            worksheet[cellRef].s = {
-                fill: { patternType: 'solid' },
-                font: { color: {} },
-                alignment: { vertical: 'center', horizontal: 'left' }
-            };
-
-            // Set column background colors
-            if (colIndex < 18) { // First group of columns
-                worksheet[cellRef].s.fill.fgColor = { rgb: '002060' };
-            } else { // Second group of columns
-                worksheet[cellRef].s.fill.fgColor = { rgb: '660066' };
-            }
-
-            // Set default font color to white
-            worksheet[cellRef].s.font.color.rgb = 'FFFFFF';
-
-            // Override font color for historic records
-            if (row.Status === 'Historic') {
-                worksheet[cellRef].s.font.color.rgb = 'FF0000';
-            }
-        });
-    });
-
-  // Style header row
-headers.forEach((header, colIndex) => {
-    const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIndex });
-    worksheet[cellRef].s = {
-        font: { bold: true, color: { rgb: 'FFFFFF' } }, // White font color
-        fill: { patternType: 'solid', fgColor: { rgb: '000000' } }, // Black background color
-        alignment: { vertical: 'center', horizontal: 'center' } // Center alignment
-    };
-});
-
-    // Create a new workbook and worksheet
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet2');
-    XLSX.writeFile(workbook, filePath);
-
-    res.json({ message: 'Data saved successfully!' });
-});
-
-app.get('/fetch-data', (req, res) => {
-    const { associateId, status } = req.query;
-
-    if (!associateId || !status) {
-        return res.status(400).json({ error: 'Missing required parameters' });
-    }
-
-    try {
-        const workbook = XLSX.readFile('attendance.xlsx');
-        const worksheet = workbook.Sheets['Sheet2'];
-        const data = XLSX.utils.sheet_to_json(worksheet);
-
-        // Map Excel column names to form field names
-        const fieldMap = {
-            'ESA Project ID': 'esaProjectId',
-            'ESA Project Name': 'esaProjectName',
-            'Associate ID': 'associateId',
-            'Name': 'name',
-            'Designation': 'designation',
-            'Location': 'location',
-            'On/Off': 'onOff',
-            'Billable': 'billable',
-            'Allocation Start Date': 'allocationStartDate',
-            'Billing Start Date': 'billingStartDate',
-            'Allocation End Date': 'allocationEndDate',
-            'Billing End Date': 'billingEndDate',
-            'Billing Rate': 'billingRate',
-            'Department': 'department',
-            'Home Manager ID': 'homeManagerId',
-            'Home Manager Name': 'homeManagerName',
-            'Project POC': 'projectPoc',
-            'Status': 'status',
-            'Requisition/SOW Contract Number': 'requisitionSowContractNumber',
-            'Z-ID': 'zId',
-            'Ally Track': 'allyTrack',
-            'Sub Track': 'subTrack',
-            'Integrated Project': 'integratedProject',
-            'Onsite Only Project': 'onsiteOnlyProject',
-            'Offshore Only Project': 'offshoreOnlyProject',
-            'Onsite + Offshore Project': 'onsiteOffshoreProject',
-            'Engagement Manager': 'engagementManager',
-            'Alternate Engagement Manager': 'alternateEngagementManager',
-            'Director': 'director',
-            'Exec Lead': 'execLead',
-            'Ally CIO': 'allyCio',
-            'LoB': 'lob',
-            'Ally Mail ID': 'allyMailId',
-            'Cognizant Email ID': 'cognizantEmailId'
-        };
-
-        const record = data.find(row =>
-            row['Associate ID'].toString().trim() === associateId.toString().trim() &&
-            row['Status'].trim().toLowerCase() === status.toLowerCase().trim()
-        );
-
-        if (!record) {
-            return res.status(404).json({ error: 'Record not found' });
-        }
-
-        // Map Excel columns to form fields
-        const mappedRecord = {};
-        Object.entries(record).forEach(([excelKey, value]) => {
-            const formField = fieldMap[excelKey];
-            if (formField) {
-                mappedRecord[formField] = value;
-            }
-        });
-
-        res.json(mappedRecord);
-    } catch (error) {
-        console.error('Server error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-app.get('/associates', (req, res) => {
-    try {
-        const filePath = 'attendance.xlsx';
-        if (!fs.existsSync(filePath)) return res.json([]);
-
-        const workbook = XLSX.readFile(filePath);
-        const worksheet = workbook.Sheets['Sheet2'];
-        const data = XLSX.utils.sheet_to_json(worksheet);
-
-        const associates = data.map(row => ({
-            associateId: row['Associate ID'].toString(),
-            name: row['Name'],
-            status: row['Status']
-        }));
-
-        res.json(associates);
-    } catch (error) { 
-        console.error('Error fetching associates:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-app.listen(3000, () => console.log('Server running on port 3000'));
-
-
 <!DOCTYPE html>
 <html>
 
@@ -1100,3 +853,251 @@ app.listen(3000, () => console.log('Server running on port 3000'));
 </body>
 
 </html>
+
+
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const XLSX = require('xlsx-js-style');
+const fs = require('fs');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Serve static files (HTML, CSS, JS)
+app.use(express.static('public'));
+
+app.post('/submit', (req, res) => {
+    const {
+        esaProjectId, esaProjectName, associateId, name, designation, location, onOff, billable,
+        allocationStartDate, billingStartDate, allocationEndDate, billingEndDate, billingRate, department,
+        homeManagerId, homeManagerName, projectPoc, status, requisitionSowContractNumber, zId, allyTrack,
+        subTrack, integratedProject, onsiteOnlyProject, offshoreOnlyProject, onsiteOffshoreProject,
+        engagementManager, alternateEngagementManager, director, execLead, allyCio, lob, allyMailId,
+        cognizantEmailId
+    } = req.body;
+
+    // Validate all required fields
+    if (!esaProjectId || !esaProjectName || !associateId || !name || !designation || !location || !onOff || !billable ||
+        !allocationStartDate || !billingStartDate || !allocationEndDate || !billingEndDate || !billingRate || !department ||
+        !homeManagerId || !homeManagerName || !projectPoc || !status || !requisitionSowContractNumber || !zId || !allyTrack ||
+        !subTrack || !integratedProject || !onsiteOnlyProject || !offshoreOnlyProject || !onsiteOffshoreProject ||
+        !engagementManager || !alternateEngagementManager || !director || !execLead || !lob || !allyMailId || !cognizantEmailId) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const filePath = 'attendance.xlsx';
+    const headers = [
+        'ESA Project ID', 'ESA Project Name', 'Associate ID', 'Name', 'Designation', 'Location', 'On/Off', 'Billable',
+        'Allocation Start Date', 'Billing Start Date', 'Allocation End Date', 'Billing End Date', 'Billing Rate', 'Department',
+        'Home Manager ID', 'Home Manager Name', 'Project POC', 'Status', 'Requisition/SOW Contract Number', 'Z-ID', 'Ally Track',
+        'Sub Track', 'Integrated Project', 'Onsite Only Project', 'Offshore Only Project', 'Onsite + Offshore Project',
+        'Engagement Manager', 'Alternate Engagement Manager', 'Director', 'Exec Lead', 'Ally CIO', 'LoB', 'Ally Mail ID',
+        'Cognizant Email ID'
+    ];
+    let data = [];
+
+    // Read existing data if the file exists
+    if (fs.existsSync(filePath)) {
+        const workbook = XLSX.readFile(filePath);
+        const worksheet = workbook.Sheets['Sheet2'];
+        data = XLSX.utils.sheet_to_json(worksheet);
+    }
+
+    // Remove only "Current" records with this Associate ID
+    data = data.filter(row => !(row['Associate ID'] === associateId && row['Status'] === 'Current'));
+
+    const newRow = {
+        'ESA Project ID': esaProjectId,
+        'ESA Project Name': esaProjectName,
+        'Associate ID': associateId,
+        'Name': name,
+        'Designation': designation,
+        'Location': location,
+        'On/Off': onOff,
+        'Billable': billable,
+        'Allocation Start Date': allocationStartDate,
+        'Billing Start Date': billingStartDate,
+        'Allocation End Date': allocationEndDate,
+        'Billing End Date': billingEndDate,
+        'Billing Rate': billingRate,
+        'Department': department,
+        'Home Manager ID': homeManagerId,
+        'Home Manager Name': homeManagerName,
+        'Project POC': projectPoc,
+        'Status': status,
+        'Requisition/SOW Contract Number': requisitionSowContractNumber,
+        'Z-ID': zId,
+        'Ally Track': allyTrack,
+        'Sub Track': subTrack,
+        'Integrated Project': integratedProject,
+        'Onsite Only Project': onsiteOnlyProject,
+        'Offshore Only Project': offshoreOnlyProject,
+        'Onsite + Offshore Project': onsiteOffshoreProject,
+        'Engagement Manager': engagementManager,
+        'Alternate Engagement Manager': alternateEngagementManager,
+        'Director': director,
+        'Exec Lead': execLead,
+        'Ally CIO': allyCio,
+        'LoB': lob,
+        'Ally Mail ID': allyMailId,
+        'Cognizant Email ID': cognizantEmailId
+    };
+
+    // Add new row to appropriate position
+    if (status === 'Historic') {
+        data.unshift(newRow); // Add to the top
+    } else {
+        data.push(newRow); // Add to the bottom
+    }
+
+    // Create worksheet with styling information
+    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+
+    // Apply column styling and status-based formatting
+    data.forEach((row, rowIndex) => {
+        headers.forEach((header, colIndex) => {
+            const cellRef = XLSX.utils.encode_cell({ r: rowIndex , c: colIndex });
+            if (!worksheet[cellRef]) worksheet[cellRef] = { v: row[header] };
+
+            // Initialize cell style
+            worksheet[cellRef].s = {
+                fill: { patternType: 'solid' },
+                font: { color: {} },
+                alignment: { vertical: 'center', horizontal: 'left' }
+            };
+
+            // Set column background colors
+            if (colIndex < 18) { // First group of columns
+                worksheet[cellRef].s.fill.fgColor = { rgb: '002060' };
+            } else { // Second group of columns
+                worksheet[cellRef].s.fill.fgColor = { rgb: '660066' };
+            }
+
+            // Set default font color to white
+            worksheet[cellRef].s.font.color.rgb = 'FFFFFF';
+
+            // Override font color for historic records
+            if (row.Status === 'Historic') {
+                worksheet[cellRef].s.font.color.rgb = 'FF0000';
+            }
+        });
+    });
+
+  // Style header row
+headers.forEach((header, colIndex) => {
+    const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIndex });
+    worksheet[cellRef].s = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } }, // White font color
+        fill: { patternType: 'solid', fgColor: { rgb: '000000' } }, // Black background color
+        alignment: { vertical: 'center', horizontal: 'center' } // Center alignment
+    };
+});
+
+    // Create a new workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet2');
+    XLSX.writeFile(workbook, filePath);
+
+    res.json({ message: 'Data saved successfully!' });
+});
+
+app.get('/fetch-data', (req, res) => {
+    const { associateId, status } = req.query;
+
+    if (!associateId || !status) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    try {
+        const workbook = XLSX.readFile('attendance.xlsx');
+        const worksheet = workbook.Sheets['Sheet2'];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+
+        // Map Excel column names to form field names
+        const fieldMap = {
+            'ESA Project ID': 'esaProjectId',
+            'ESA Project Name': 'esaProjectName',
+            'Associate ID': 'associateId',
+            'Name': 'name',
+            'Designation': 'designation',
+            'Location': 'location',
+            'On/Off': 'onOff',
+            'Billable': 'billable',
+            'Allocation Start Date': 'allocationStartDate',
+            'Billing Start Date': 'billingStartDate',
+            'Allocation End Date': 'allocationEndDate',
+            'Billing End Date': 'billingEndDate',
+            'Billing Rate': 'billingRate',
+            'Department': 'department',
+            'Home Manager ID': 'homeManagerId',
+            'Home Manager Name': 'homeManagerName',
+            'Project POC': 'projectPoc',
+            'Status': 'status',
+            'Requisition/SOW Contract Number': 'requisitionSowContractNumber',
+            'Z-ID': 'zId',
+            'Ally Track': 'allyTrack',
+            'Sub Track': 'subTrack',
+            'Integrated Project': 'integratedProject',
+            'Onsite Only Project': 'onsiteOnlyProject',
+            'Offshore Only Project': 'offshoreOnlyProject',
+            'Onsite + Offshore Project': 'onsiteOffshoreProject',
+            'Engagement Manager': 'engagementManager',
+            'Alternate Engagement Manager': 'alternateEngagementManager',
+            'Director': 'director',
+            'Exec Lead': 'execLead',
+            'Ally CIO': 'allyCio',
+            'LoB': 'lob',
+            'Ally Mail ID': 'allyMailId',
+            'Cognizant Email ID': 'cognizantEmailId'
+        };
+
+        const record = data.find(row =>
+            row['Associate ID'].toString().trim() === associateId.toString().trim() &&
+            row['Status'].trim().toLowerCase() === status.toLowerCase().trim()
+        );
+
+        if (!record) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+
+        // Map Excel columns to form fields
+        const mappedRecord = {};
+        Object.entries(record).forEach(([excelKey, value]) => {
+            const formField = fieldMap[excelKey];
+            if (formField) {
+                mappedRecord[formField] = value;
+            }
+        });
+
+        res.json(mappedRecord);
+    } catch (error) {
+        console.error('Server error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/associates', (req, res) => {
+    try {
+        const filePath = 'attendance.xlsx';
+        if (!fs.existsSync(filePath)) return res.json([]);
+
+        const workbook = XLSX.readFile(filePath);
+        const worksheet = workbook.Sheets['Sheet2'];
+        const data = XLSX.utils.sheet_to_json(worksheet);
+
+        const associates = data.map(row => ({
+            associateId: row['Associate ID'].toString(),
+            name: row['Name'],
+            status: row['Status']
+        }));
+
+        res.json(associates);
+    } catch (error) { 
+        console.error('Error fetching associates:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));
