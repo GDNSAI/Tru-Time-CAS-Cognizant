@@ -1,28 +1,48 @@
-"ESA
-Project ID"	ESA Project Name	"Associate 
-ID"	Name	Designation	Location	On/Off	Billable	"Allocation
- Start 
-Date"	"Billing 
-Start 
-date"	"Allocation 
-End 
-Date"	"Billing 
-End 
-Date"	Billing Rate ($)	Deparment	"Home 
-Manager ID"	Home Manager Name	Project POC?	Status
+app.post('/submit', (req, res) => {
+    // ... [existing validation and data processing code]
 
+    // Create worksheet with styling information
+    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
 
-these col background color should be in #002060
+    // Apply column styling and status-based formatting
+    data.forEach((row, rowIndex) => {
+        headers.forEach((header, colIndex) => {
+            const cellRef = XLSX.utils.encode_cell({ r: rowIndex + 1, c: colIndex });
+            if (!worksheet[cellRef]) worksheet[cellRef] = { v: row[header] };
+            
+            // Initialize cell style
+            worksheet[cellRef].s = {
+                fill: { patternType: 'solid' },
+                font: { color: {} },
+                alignment: { vertical: 'center', horizontal: 'left' }
+            };
 
+            // Set column background colors
+            if (colIndex < 18) { // First group of columns
+                worksheet[cellRef].s.fill.fgColor = { rgb: '002060' };
+            } else { // Second group of columns
+                worksheet[cellRef].s.fill.fgColor = { rgb: '660066' };
+            }
 
-Requisition/SOW Contract Number	Z-ID	Ally Track	Sub Track	"Integrated 
-Project?"	"Onsite
- Only 
-Project?"	"Offshore 
-Only 
-Project?"	"Onsite + Offshore
- Project?"	Engagement Manager	Alternate Engement Manager	Director	Exec Lead	Ally CIO	LoB	Ally Mail ID	Cognizant Email Id
+            // Set default font color to white
+            worksheet[cellRef].s.font.color.rgb = 'FFFFFF';
 
+            // Override font color for historic records
+            if (row.Status === 'Historic') {
+                worksheet[cellRef].s.font.color.rgb = 'FF0000';
+            }
+        });
+    });
 
-thes col back ground should be in #660066
+    // Style header row
+    headers.forEach((header, colIndex) => {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIndex });
+        worksheet[cellRef].s = {
+            font: { bold: true, color: { rgb: '000000' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'D3D3D3' } },
+            alignment: { vertical: 'center', horizontal: 'center' }
+        };
+    });
 
+    // ... [existing workbook creation and file saving code]
+});
