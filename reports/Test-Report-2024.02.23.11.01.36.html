@@ -1,119 +1,66 @@
-Product Inventory System
+public class Main {
+    public static void main(String[] args) {
+        // Create Product objects
+        Product product1 = new Product("Wireless Mouse", 29.99, 150);
+        Product product2 = new Product("Smartphone", 499.99, 80);
 
-1. Skill Description:
-The assignment is designed to assess and develop your understanding of Core Java
-concepts, Object-Oriented Programming (OOP) principles, and the use of
-constructors. You will apply these skills to create a product inventory system that
-models products, orders, and customers.
-2. Prerequisite:
-Basic knowledge of Java syntax, data types, variables, and the concept of OOP
-(classes and objects). Understanding how to use constructors in Java is also required.
-3. Scenario:
-You are developing a simple product inventory and order management system for a
-small online store. The store sells various products, each with a name, price, and
-quantity in stock. Customers can place orders for products. You will model the
-system using classes, variables, constructors, and objects. Your task is to:
-1. Define classes for products and orders.
-2. Use constructors to initialize objects.
-3. Display product and order details.
-4. Task:
-You will complete the following:
-o Create a class Product to represent a product with the following attributes:
- productName (String)
- price (double)
- quantityInStock (int)
+        // Create Order objects
+        Order order1 = new Order("Alice", product1);
+        Order order2 = new Order("Bob", product2, 499.99);
 
-o Create a class Order to represent an order with the following attributes:
- customerName (String)
- product (Product type)
- orderAmount (double)
-o Use constructors in both classes to initialize the attributes:
- The Product class should have a constructor that takes productName,
-price, and quantityInStock.
- The Order class should have two constructors:
- One that takes customerName and product (using a default
-orderAmount of 100.0).
- Another that takes all three parameters: customerName,
-product, and orderAmount.
+        // Display Product Details
+        System.out.println("Product Details:");
+        System.out.println("Product Name: " + product1.productName);
+        System.out.println("Price: " + product1.price);
+        System.out.println("Quantity in Stock: " + product1.quantityInStock);
+        System.out.println();
 
-o In the main method, create two Product objects and two Order objects.
-o Display the details of the products and orders.
-5. Instructions:
-o Step 1: Create a class named Product with the following attributes:
- productName (String)
- price (double)
- quantityInStock (int)
-o Step 2: Create a constructor in the Product class that initializes the attributes
-using the provided parameters.
-o Step 3: Create a class named Order with the following attributes:
- customerName (String)
- product (Product type)
- orderAmount (double)
-o Step 4: Create two constructors in the Order class:
- The first constructor should take customerName and product, setting
-the orderAmount to a default value of 100.0.
+        System.out.println("Product Details:");
+        System.out.println("Product Name: " + product2.productName);
+        System.out.println("Price: " + product2.price);
+        System.out.println("Quantity in Stock: " + product2.quantityInStock);
+        System.out.println();
 
- The second constructor should take all three parameters:
-customerName, product, and orderAmount.
-o Step 5: In the main method, create two Product objects:
- Product 1: &quot;Wireless Mouse&quot;, 29.99, 150
- Product 2: &quot;Smartphone&quot;, 499.99, 80
-o Step 6: Create two Order objects:
- Order 1: Customer: &quot;Alice&quot;, Product: Wireless Mouse (use the default
-orderAmount)
- Order 2: Customer: &quot;Bob&quot;, Product: Smartphone, Order Amount:
-499.99
+        // Display Order Details
+        System.out.println("Order Details:");
+        System.out.println("Customer Name: " + order1.customerName);
+        System.out.println("Product: " + order1.product.productName);
+        System.out.println("Order Amount: " + order1.orderAmount);
+        System.out.println();
 
-o Step 7: Display the details of both the products and the orders using
-System.out.println().
+        System.out.println("Order Details:");
+        System.out.println("Customer Name: " + order2.customerName);
+        System.out.println("Product: " + order2.product.productName);
+        System.out.println("Order Amount: " + order2.orderAmount);
+    }
+}
 
-6. Input:
-No input from the user; use hardcoded values for creating products and orders.
-7. Sample Dataset:
-Product 1:
-Product Name: Wireless Mouse
-Price: 29.99
-Quantity in Stock: 150
-Product 2:
-Product Name: Smartphone
-Price: 499.99
-Quantity in Stock: 80
-Order 1:
-Customer Name: Alice
-Product: Wireless Mouse
-Order Amount: 100.0 (default)
-Order 2:
+class Product {
+    public String productName;
+    public double price;
+    public int quantityInStock;
 
-Customer Name: Bob
-Product: Smartphone
-Order Amount: 499.99
-8. Expected Outcome:
-The program should output the following:
-Product Details:
-Product Name: Wireless Mouse
-Price: 29.99
-Quantity in Stock: 150
+    public Product(String productName, double price, int quantityInStock) {
+        this.productName = productName;
+        this.price = price;
+        this.quantityInStock = quantityInStock;
+    }
+}
 
-Product Details:
-Product Name: Smartphone
-Price: 499.99
-Quantity in Stock: 80
+class Order {
+    public String customerName;
+    public Product product;
+    public double orderAmount;
 
-Order Details:
-Customer Name: Alice
-Product: Wireless Mouse
-Order Amount: 100.0
+    public Order(String customerName, Product product) {
+        this.customerName = customerName;
+        this.product = product;
+        this.orderAmount = 100.0;
+    }
 
-Order Details:
-Customer Name: Bob
-Product: Smartphone
-Order Amount: 499.99
-9. Learning Outcome:
-By completing this assignment, learners will:
-o Gain hands-on experience with Java variables and data types.
-
-o Learn how to define and use classes and objects.
-o Understand how constructors are used to initialize objects with specific
-values.
-o Develop the ability to model real-world entities (products and orders) using
-Java&#39;s OOP principles.
+    public Order(String customerName, Product product, double orderAmount) {
+        this.customerName = customerName;
+        this.product = product;
+        this.orderAmount = orderAmount;
+    }
+}
