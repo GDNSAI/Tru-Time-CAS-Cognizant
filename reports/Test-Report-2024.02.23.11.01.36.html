@@ -1,32 +1,736 @@
+
+ying Repeated_Segments
+0
+Attempted
+0 For Review
+Skipped
+1. Question Type: Coding
+Identifying Repeated Segments
+Time Remaining: 00:59:38
+Submit Assessment
+Dark
+Java
+You've got a string S of length N, and your goal is to find pairs of integers (i, j) that meet the following two conditions:
+1≤i≤ j ≤ N
+S[i] = si
+To do this, you'll first create a series of strings by removing a single character from S at each position from 1 to N. Then, you'll count how many pairs of integers (i, j) satisfy the given conditions.
+Function Description:
+In the provided code, you have a method named "numberOfEqualStrings()". Your task is
+to complete this method to calculate and return the number of pairs of integers (i, j) that
+meet the specified conditions. Write your code below the comment "Write Code Here".
+There will be multiple test cases, so ensure that your code handles different inputs and produces the correct outputs.
+alem
+asai2@cognizant.com
+Live: 1.31Mbps
+¡GOO Z6 Pro
+ademy@iiht.com.
+Privacy Policy
+Input Format:
+The input consists of two lines:
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+d
+0
+Attempted
+0
+For Review
+0
+iGeepalem
+vanagasai2@cognizant.com
+Live: 1.19Mbps
+Mbps
+iQOO Z6 Pro
+techademy@iiht.com. Privacy Policy
+Skipped
+Requirements are as follows:
+1) Base Robot Class: Create an abstract base class Robot that includes common attributes such as the current position (x, y) and direction it's facing, use 'N' for North, 'E' for East, 'S' for South, 'W' for West as follows:
+Class Variables:
+x (protected int): Represents the robot's current horizontal position on the grid. Protected access allows this variable to be accessed directly by subclasses.
+*y (protected int): Represents the robot's current vertical position
+on the grid. Like x, it is protected to be accessible within subclasses.
+* direction (protected char): Indicates the current facing direction of the robot, which can be 'N' (North), 'E' (East), 'S' (South), or 'W' (West). The direction affects how the robot moves when the move method is called.
+Constructor:
+- Robot(int startX, int starty, char ch): Initializes a new instance of a Robot.
+- startX: The initial horizontal position (x-coordinate) of the robot on the grid.
+- startY: The initial vertical position (y-coordinate) of the robot on the grid.
+ch: The initial direction the robot is facing. This should be one of the allowed direction characters ('N', 'E', 'S', 'W').
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+pted
+0
+For Review
+0 Skipped
+Methods:
+L
+Submit Assessment
+* move(): Moves the robot one unit forward in the direction it is currently facing.
+* turn_left(): Rotates the robot 90 degrees counter-clockwise (left) without changing its position. * turn_right(): Rotates the robot 90 degrees clockwise (right) without changing its position.
+* executelnstructions(String instructions): An abstract method that subclasses must implement to define how the robot processes a string of movement instructions. This method is intended to allow different types of robots to respond to a sequence of commands (like 'move', 'turn_left', 'turn_right').
+2) StandardRobot Subclass:
+Create a subclass StandardRobot from Robot.
+* Constructor: Initializes a new instance of Standard Robot with specific starting coordinates and a character representatior
+alem
+asai2@cognizant.com
+Live: 1.04Mbps
+ader76 ProPrivacy Policy
+* Parameters:
+- int startX: The starting x-coordinate of the robot.
+- int starty: The starting y-coordinate of the robot.
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+1 Unread
+0 Attempted
+For Review
+0 Skipped
+CODING
+1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Speed Test: >= 10Mbps
+Time Remaining: 00:59:15
+Submit Assessment
+- char ch: A character representing the robot on a display or grid.
+*Overridden Method:
+- executelnstructions(String instructions) Method: Executes a string of instructions to control the robot's movements and turns.
+-> Functionality: Interprets and executes a sequence of instructions provided as a string, where each character in the string directs the robot to perform a specific action:
+- 'G' (Go): Instructs the robot to move forward in the direction it is currently facing. if your current position is (0,0) and direction is E, So G will move you to (1,0) postion and so on.
+- 'L' (Left): Instructs the robot to turn left.
+- 'R' (Right): Instructs the robot to turn right.
+3) CircularPattern Robot Subclass:
+Live: 1.08Mbps
+Create a subclass CircularPattern Robot from Robot.
+Hello!'
+* Constructor: Initializes a new instance of CircularPattern Robot with
+IGO076 Pro techademy@iiht.com. | Privacy Policy
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+Simulator
+1 Unread
+0 Attempted
+For Review
+0
+Skipped
+Time Remaining: 00:59:11
+Submit Assessment
+CODING 1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Speed Test: >= 10Mbps L
+Hello GOO Z6 Pro
+Live: 0.88Mbps
+50564 techademy@iiht.com. | Privacy Policy
+* Constructor: Initializes a new instance of CircularPattern Robot with
+a specific starting position and a character representing the direction.
+* Parameters:
+- int startX: The initial x-coordinate of the robot.
+- int startY: The initial y-coordinate of the robot.
+- char ch: The initial direction the robot is facing, represented as 'N' (north), 'S' (south), 'E' (east), or 'W' (west).
+* Overridden Methods:
+- move() Method: Overrides the move method from the Robot superclass to provide specific diagonal movement based on the current direction of the robot.
+->Functionality of move() method: Moves diagonally based on the direction.
+- executelnstructions(String instructions) Method: Executes a
+string of instructions to control the robot's movements and turns.
+-> Functionality: Interprets and executes a sequence of instructions provided as a string, where each character in the string directs the robot to perform a specific action:
+- 'G' (Go): Instructs the robot to move forward digonally in the direction it is currently facing.if your current
+position is (00) and direction is F So G will move you to (1-1) postion and so on(digonally towards right side) All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+1 Unread
+0
+Attempted
+0
+For Review
+0 Skipped
+Time Remaining: 00:59:06
+Submit Assessment
+CODING 1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Test: >= 10Mbps
+Live: 0.96Mbps
+- 'R' (Right): Instructs the robot to turn right.
+Your task is to Implement the classes as described, ensuring that the inheritance hierarchy is correctly utilized for common functionalities.
+Extend the behavior in subclasses to reflect specific movement patterns.
+Evaluate the final postion of Standard Robot and CircularPattern Robot based on its instructions at the end of the instruction and return it.
+Write your code in the space below marked "WRITE YOUR LOGIC HERE". There will be multiple test cases, so ensure the input and output match the provided format exactly.
+Constraints:
+1 <= instructions.length <= 100
+instructions is 'G', 'L' or, 'R'.
+Input Format:
+First line contains the initial position of Standard Robot and CircularPattern Robot Second line contains the current direction of robots towards which they are facing
+505
+techademy@iiht.com. Privacy Policy
+Third line has a string made of instruction moves for the robot.
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+    
+1 Unread
+0
+Attempted
+0
+For Review
+0
+Skipped
+CODING
+1
+Remaining: 00:59:01
+Submit Assessment
+Third line has a string made of instruction moves for the robot.
+Output Format:
+First line of output containg two space seperated integer values which denotes the positon of Standard Robot in sequence of x and y coordinate.
+Second line of output containg two space seperated integer values which denotes the positon of Circular Pattern Robot in sequence of x and y coordinate.
+Sample Input:
+00- Denotes initial postion of Standard Robot and Circular Pattern Robot
+E-Denotes the current direction of robots towards which they are facing
+GLGRGG-Movement instruction for robot
+Sample Output:
+2 Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+ed Test: >= 10Mbps
+31
+4-2
+Live: 0.43Mbps
+Explanation:
+iGOO Z6 Pro
+llo!
+50564
+
+    
+1 Unread
+0
+Attempted
+0
+For Review
+0 Skipped
+Time Remaining: 00:59:06
+Submit Assessment
+CODING 1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Test: >= 10Mbps
+Live: 0.96Mbps
+- 'R' (Right): Instructs the robot to turn right.
+Your task is to Implement the classes as described, ensuring that the inheritance hierarchy is correctly utilized for common functionalities.
+Extend the behavior in subclasses to reflect specific movement patterns.
+Evaluate the final postion of Standard Robot and CircularPattern Robot based on its instructions at the end of the instruction and return it.
+Write your code in the space below marked "WRITE YOUR LOGIC HERE". There will be multiple test cases, so ensure the input and output match the provided format exactly.
+Constraints:
+1 <= instructions.length <= 100
+instructions is 'G', 'L' or, 'R'.
+Input Format:
+First line contains the initial position of Standard Robot and CircularPattern Robot Second line contains the current direction of robots towards which they are facing
+505
+techademy@iiht.com. Privacy Policy
+Third line has a string made of instruction moves for the robot.
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+    
+Robot Movement_Simulator
+Unread
+0 Attempted
+0
+For Review
+0
+Skipped
+Explanation:
+DING
+1
+Consider the plain as below:
+NORTH
+(0,5)
+(0, 4)
+(0,3)
+(0, 2)
+(0, 1)
+Time Remaining: 00:58:56
+Submit Assessment
+WEST (-4,0)(-3,0)(-2,0) (-1,0)(0, 0)(1,0) (2,0) (3,0) (4,0) EAST
+(0,-1)
+(0,-2)
+gasai Geepalem
+m.devanagasai2@cognizant.com
+(0,-3)
+= 10Mbps
+Live: 0.75Mbps
+(0,-4)
+iQOO Z6 Pro
+SOUTH
+B
+    
+ulator
+1 Unread
+0 Attempted
+0
+For Review
+0 Skipped
+CODING 1
+Time Remaining: 00:58:52
+HF
+Both of the Robots starts at the position of (0,0) and facing towards E->"East" direction. following will be the moves of StandardRobot after each instruction: StandardRobot position after G (1, 0)-> Move by one step stright in current direction StandardRobot position after L: (1, 0)-> Turn left to your current position StandardRobot position after G: (1, 1)-> Move by one step stright in current direction StandardRobot position after R: (1, 1)-> Turn right to your current position Standard Robot position after G: (2, 1)-> Move by one step stright in curdent direction StandardRobot position after G: (3, 1)-> Move by one step stright in current direction (1,1) = (2,1) =(3,1){Final position}
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Test: >= 10Mbps
+Live: 1.17Mbps
+(0,0) = (1,0)
+50564
+techademy@iiht.com. | Privacy Policy
+iGOO Z6 Pro
+Hence the final position will be 3,1 for Standard Robot.
+Submit Assessment
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+    
+E
+Unread
+ODING
+1
+0 Attempted
+0
+For Review
+0 Skipped
+agasai Geepalem
+em.devanagasai2@cognizant.com
+>= 10Mbps
+Live: 0.72Mbps
+iGOO Z6 Pro
+4
+techademy@iiht.com. | Privacy Policy
+Time Remaining: 00:58:48+
+Submit Assessment
+Hence the final position will be 3,1 for Standard Robot.
+Following will be the moves of CircularPattern Robot after each instruction:
+Circular Pattern Robot position After G : (1,-1)
+CircularPattern Robot position After L: (1,-1)
+CircularPattern Robot position After G : (2, 0)
+Circular Pattern Robot position After R: (2, 0) Circular Pattern Robot position After G: (3,-1)
+CircularPattern Robot position After G: (4,-2)
+(0,0). (2,0)
+\\ // \\
+(1,-1). (3,-1)
+11
+4
+(4,-2){final position}
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+Robot Movement_Simulator
+1 Unread
+0 Attempted
+For Review
+0 Skipped
+CODING 1
+Time Remaining: 00:58:37
+Submit Assessment
+Hence the final position will be 4,-2 for Circular PatternRobot.
+So the Final output is:
+31
+4-2
+123456
 import java.util.*;
-import java.io.*;
-import java.lang.Math;
-
-public class Main {
-    public static int numberOfEqualStrings(int N, String S) {
-        int result = 0;
-        if (N <= 1) return 0;
-        char prev = S.charAt(0);
-        int currentRunLength = 1;
-        for (int i = 1; i < N; i++) {
-            if (S.charAt(i) == prev) {
-                currentRunLength++;
-            } else {
-                result += currentRunLength * (currentRunLength - 1) / 2;
-                prev = S.charAt(i);
-                currentRunLength = 1;
-            }
-        }
-        // Add the last run
-        result += currentRunLength * (currentRunLength - 1) / 2;
-        return result;
-    }
-
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        int N = sc.nextInt();
-        String S = sc.next();
-        sc.close();
-        System.out.print(numberOfEqualStrings(N, S));
-    }
+// Write your logic here
+// Non editable starts here
+public class RobotSimulation {
+public static void main(String[] args) {
+Scanner sc = new Scanner(System.in);
+int x= sc.nextInt();
+7
+8
+int y= sc.nextInt();
+9
+char ch = sc.next().charAt(0);
+10
+11
+evanagasai Geepalem
+12
+13
+eepalem.devanagasai2@cognizant.com
+14
+15
+Test: >= 10Mbps
+Live: 1.10Mbps
+16
+17
 }
+18
+}
+505000 zapr@iht.com. | Privacy Policy
+I
+StandardRobot standardRobot = new StandardRobot (x,y,ch);
+CircularPatternRobot circularPatternRobot = new CircularPatternRobot (x,y,ch); String instructions =sc.next();
+standardRobot.executeIns
+ying Repeated_Segments
+0
+Attempted
+0 For Review
+Skipped
+1. Question Type: Coding
+Identifying Repeated Segments
+Time Remaining: 00:59:38
+Submit Assessment
+Dark
+Java
+You've got a string S of length N, and your goal is to find pairs of integers (i, j) that meet the following two conditions:
+1≤i≤ j ≤ N
+S[i] = si
+To do this, you'll first create a series of strings by removing a single character from S at each position from 1 to N. Then, you'll count how many pairs of integers (i, j) satisfy the given conditions.
+Function Description:
+In the provided code, you have a method named "numberOfEqualStrings()". Your task is
+to complete this method to calculate and return the number of pairs of integers (i, j) that
+meet the specified conditions. Write your code below the comment "Write Code Here".
+There will be multiple test cases, so ensure that your code handles different inputs and produces the correct outputs.
+alem
+asai2@cognizant.com
+Live: 1.31Mbps
+¡GOO Z6 Pro
+ademy@iiht.com.
+Privacy Policy
+Input Format:
+The input consists of two lines:
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+d
+0
+Attempted
+0
+For Review
+0
+iGeepalem
+vanagasai2@cognizant.com
+Live: 1.19Mbps
+Mbps
+iQOO Z6 Pro
+techademy@iiht.com. Privacy Policy
+Skipped
+Requirements are as follows:
+1) Base Robot Class: Create an abstract base class Robot that includes common attributes such as the current position (x, y) and direction it's facing, use 'N' for North, 'E' for East, 'S' for South, 'W' for West as follows:
+Class Variables:
+x (protected int): Represents the robot's current horizontal position on the grid. Protected access allows this variable to be accessed directly by subclasses.
+*y (protected int): Represents the robot's current vertical position
+on the grid. Like x, it is protected to be accessible within subclasses.
+* direction (protected char): Indicates the current facing direction of the robot, which can be 'N' (North), 'E' (East), 'S' (South), or 'W' (West). The direction affects how the robot moves when the move method is called.
+Constructor:
+- Robot(int startX, int starty, char ch): Initializes a new instance of a Robot.
+- startX: The initial horizontal position (x-coordinate) of the robot on the grid.
+- startY: The initial vertical position (y-coordinate) of the robot on the grid.
+ch: The initial direction the robot is facing. This should be one of the allowed direction characters ('N', 'E', 'S', 'W').
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+pted
+0
+For Review
+0 Skipped
+Methods:
+L
+Submit Assessment
+* move(): Moves the robot one unit forward in the direction it is currently facing.
+* turn_left(): Rotates the robot 90 degrees counter-clockwise (left) without changing its position. * turn_right(): Rotates the robot 90 degrees clockwise (right) without changing its position.
+* executelnstructions(String instructions): An abstract method that subclasses must implement to define how the robot processes a string of movement instructions. This method is intended to allow different types of robots to respond to a sequence of commands (like 'move', 'turn_left', 'turn_right').
+2) StandardRobot Subclass:
+Create a subclass StandardRobot from Robot.
+* Constructor: Initializes a new instance of Standard Robot with specific starting coordinates and a character representatior
+alem
+asai2@cognizant.com
+Live: 1.04Mbps
+ader76 ProPrivacy Policy
+* Parameters:
+- int startX: The starting x-coordinate of the robot.
+- int starty: The starting y-coordinate of the robot.
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+1 Unread
+0 Attempted
+For Review
+0 Skipped
+CODING
+1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Speed Test: >= 10Mbps
+Time Remaining: 00:59:15
+Submit Assessment
+- char ch: A character representing the robot on a display or grid.
+*Overridden Method:
+- executelnstructions(String instructions) Method: Executes a string of instructions to control the robot's movements and turns.
+-> Functionality: Interprets and executes a sequence of instructions provided as a string, where each character in the string directs the robot to perform a specific action:
+- 'G' (Go): Instructs the robot to move forward in the direction it is currently facing. if your current position is (0,0) and direction is E, So G will move you to (1,0) postion and so on.
+- 'L' (Left): Instructs the robot to turn left.
+- 'R' (Right): Instructs the robot to turn right.
+3) CircularPattern Robot Subclass:
+Live: 1.08Mbps
+Create a subclass CircularPattern Robot from Robot.
+Hello!'
+* Constructor: Initializes a new instance of CircularPattern Robot with
+IGO076 Pro techademy@iiht.com. | Privacy Policy
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+Simulator
+1 Unread
+0 Attempted
+For Review
+0
+Skipped
+Time Remaining: 00:59:11
+Submit Assessment
+CODING 1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Speed Test: >= 10Mbps L
+Hello GOO Z6 Pro
+Live: 0.88Mbps
+50564 techademy@iiht.com. | Privacy Policy
+* Constructor: Initializes a new instance of CircularPattern Robot with
+a specific starting position and a character representing the direction.
+* Parameters:
+- int startX: The initial x-coordinate of the robot.
+- int startY: The initial y-coordinate of the robot.
+- char ch: The initial direction the robot is facing, represented as 'N' (north), 'S' (south), 'E' (east), or 'W' (west).
+* Overridden Methods:
+- move() Method: Overrides the move method from the Robot superclass to provide specific diagonal movement based on the current direction of the robot.
+->Functionality of move() method: Moves diagonally based on the direction.
+- executelnstructions(String instructions) Method: Executes a
+string of instructions to control the robot's movements and turns.
+-> Functionality: Interprets and executes a sequence of instructions provided as a string, where each character in the string directs the robot to perform a specific action:
+- 'G' (Go): Instructs the robot to move forward digonally in the direction it is currently facing.if your current
+position is (00) and direction is F So G will move you to (1-1) postion and so on(digonally towards right side) All Rights Reserved by Techademy Learning Solutions Private Limited
+
+
+1 Unread
+0
+Attempted
+0
+For Review
+0 Skipped
+Time Remaining: 00:59:06
+Submit Assessment
+CODING 1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Test: >= 10Mbps
+Live: 0.96Mbps
+- 'R' (Right): Instructs the robot to turn right.
+Your task is to Implement the classes as described, ensuring that the inheritance hierarchy is correctly utilized for common functionalities.
+Extend the behavior in subclasses to reflect specific movement patterns.
+Evaluate the final postion of Standard Robot and CircularPattern Robot based on its instructions at the end of the instruction and return it.
+Write your code in the space below marked "WRITE YOUR LOGIC HERE". There will be multiple test cases, so ensure the input and output match the provided format exactly.
+Constraints:
+1 <= instructions.length <= 100
+instructions is 'G', 'L' or, 'R'.
+Input Format:
+First line contains the initial position of Standard Robot and CircularPattern Robot Second line contains the current direction of robots towards which they are facing
+505
+techademy@iiht.com. Privacy Policy
+Third line has a string made of instruction moves for the robot.
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+    
+1 Unread
+0
+Attempted
+0
+For Review
+0
+Skipped
+CODING
+1
+Remaining: 00:59:01
+Submit Assessment
+Third line has a string made of instruction moves for the robot.
+Output Format:
+First line of output containg two space seperated integer values which denotes the positon of Standard Robot in sequence of x and y coordinate.
+Second line of output containg two space seperated integer values which denotes the positon of Circular Pattern Robot in sequence of x and y coordinate.
+Sample Input:
+00- Denotes initial postion of Standard Robot and Circular Pattern Robot
+E-Denotes the current direction of robots towards which they are facing
+GLGRGG-Movement instruction for robot
+Sample Output:
+2 Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+ed Test: >= 10Mbps
+31
+4-2
+Live: 0.43Mbps
+Explanation:
+iGOO Z6 Pro
+llo!
+50564
+
+    
+1 Unread
+0
+Attempted
+0
+For Review
+0 Skipped
+Time Remaining: 00:59:06
+Submit Assessment
+CODING 1
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Test: >= 10Mbps
+Live: 0.96Mbps
+- 'R' (Right): Instructs the robot to turn right.
+Your task is to Implement the classes as described, ensuring that the inheritance hierarchy is correctly utilized for common functionalities.
+Extend the behavior in subclasses to reflect specific movement patterns.
+Evaluate the final postion of Standard Robot and CircularPattern Robot based on its instructions at the end of the instruction and return it.
+Write your code in the space below marked "WRITE YOUR LOGIC HERE". There will be multiple test cases, so ensure the input and output match the provided format exactly.
+Constraints:
+1 <= instructions.length <= 100
+instructions is 'G', 'L' or, 'R'.
+Input Format:
+First line contains the initial position of Standard Robot and CircularPattern Robot Second line contains the current direction of robots towards which they are facing
+505
+techademy@iiht.com. Privacy Policy
+Third line has a string made of instruction moves for the robot.
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+    
+Robot Movement_Simulator
+Unread
+0 Attempted
+0
+For Review
+0
+Skipped
+Explanation:
+DING
+1
+Consider the plain as below:
+NORTH
+(0,5)
+(0, 4)
+(0,3)
+(0, 2)
+(0, 1)
+Time Remaining: 00:58:56
+Submit Assessment
+WEST (-4,0)(-3,0)(-2,0) (-1,0)(0, 0)(1,0) (2,0) (3,0) (4,0) EAST
+(0,-1)
+(0,-2)
+gasai Geepalem
+m.devanagasai2@cognizant.com
+(0,-3)
+= 10Mbps
+Live: 0.75Mbps
+(0,-4)
+iQOO Z6 Pro
+SOUTH
+B
+    
+ulator
+1 Unread
+0 Attempted
+0
+For Review
+0 Skipped
+CODING 1
+Time Remaining: 00:58:52
+HF
+Both of the Robots starts at the position of (0,0) and facing towards E->"East" direction. following will be the moves of StandardRobot after each instruction: StandardRobot position after G (1, 0)-> Move by one step stright in current direction StandardRobot position after L: (1, 0)-> Turn left to your current position StandardRobot position after G: (1, 1)-> Move by one step stright in current direction StandardRobot position after R: (1, 1)-> Turn right to your current position Standard Robot position after G: (2, 1)-> Move by one step stright in curdent direction StandardRobot position after G: (3, 1)-> Move by one step stright in current direction (1,1) = (2,1) =(3,1){Final position}
+Devanagasai Geepalem
+geepalem.devanagasai2@cognizant.com
+Test: >= 10Mbps
+Live: 1.17Mbps
+(0,0) = (1,0)
+50564
+techademy@iiht.com. | Privacy Policy
+iGOO Z6 Pro
+Hence the final position will be 3,1 for Standard Robot.
+Submit Assessment
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+    
+E
+Unread
+ODING
+1
+0 Attempted
+0
+For Review
+0 Skipped
+agasai Geepalem
+em.devanagasai2@cognizant.com
+>= 10Mbps
+Live: 0.72Mbps
+iGOO Z6 Pro
+4
+techademy@iiht.com. | Privacy Policy
+Time Remaining: 00:58:48+
+Submit Assessment
+Hence the final position will be 3,1 for Standard Robot.
+Following will be the moves of CircularPattern Robot after each instruction:
+Circular Pattern Robot position After G : (1,-1)
+CircularPattern Robot position After L: (1,-1)
+CircularPattern Robot position After G : (2, 0)
+Circular Pattern Robot position After R: (2, 0) Circular Pattern Robot position After G: (3,-1)
+CircularPattern Robot position After G: (4,-2)
+(0,0). (2,0)
+\\ // \\
+(1,-1). (3,-1)
+11
+4
+(4,-2){final position}
+All Rights Reserved by Techademy Learning Solutions Private Limited
+
+Robot Movement_Simulator
+1 Unread
+0 Attempted
+For Review
+0 Skipped
+CODING 1
+Time Remaining: 00:58:37
+Submit Assessment
+Hence the final position will be 4,-2 for Circular PatternRobot.
+So the Final output is:
+31
+4-2
+123456
+import java.util.*;
+// Write your logic here
+// Non editable starts here
+public class RobotSimulation {
+public static void main(String[] args) {
+Scanner sc = new Scanner(System.in);
+int x= sc.nextInt();
+7
+8
+int y= sc.nextInt();
+9
+char ch = sc.next().charAt(0);
+10
+11
+evanagasai Geepalem
+12
+13
+eepalem.devanagasai2@cognizant.com
+14
+15
+Test: >= 10Mbps
+Live: 1.10Mbps
+16
+17
+}
+18
+}
+505000 zapr@iht.com. | Privacy Policy
+I
+StandardRobot standardRobot = new StandardRobot (x,y,ch);
+CircularPatternRobot circularPatternRobot = new CircularPatternRobot (x,y,ch); String instructions =sc.next();
+standardRobot.executeInstructions (instructions);
+circularPatternRobot.executeInstructions (instructions);
+System.out.println(standardRobot.x + " " + standardRobot.y);
+System.out.println(circularPatternRobot.x + " " + circularPatternRobot.y);
+C
+All Rights Reserved by Techademy Learning Solutions Private Limited
+    
+tructions (instructions);
+circularPatternRobot.executeInstructions (instructions);
+System.out.println(standardRobot.x + " " + standardRobot.y);
+System.out.println(circularPatternRobot.x + " " + circularPatternRobot.y);
+C
+All Rights Reserved by Techademy Learning Solutions Private Limited
+    
