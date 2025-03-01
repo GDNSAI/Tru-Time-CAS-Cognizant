@@ -1,66 +1,22 @@
+import java.util.*;
+import java.io.*;
+import java.lang.Math;
+// write your code here
 public class Main {
-    public static void main(String[] args) {
-        // Create Product objects
-        Product product1 = new Product("Wireless Mouse", 29.99, 150);
-        Product product2 = new Product("Smartphone", 499.99, 80);
-
-        // Create Order objects
-        Order order1 = new Order("Alice", product1);
-        Order order2 = new Order("Bob", product2, 499.99);
-
-        // Display Product Details
-        System.out.println("Product Details:");
-        System.out.println("Product Name: " + product1.productName);
-        System.out.println("Price: " + product1.price);
-        System.out.println("Quantity in Stock: " + product1.quantityInStock);
-        System.out.println();
-
-        System.out.println("Product Details:");
-        System.out.println("Product Name: " + product2.productName);
-        System.out.println("Price: " + product2.price);
-        System.out.println("Quantity in Stock: " + product2.quantityInStock);
-        System.out.println();
-
-        // Display Order Details
-        System.out.println("Order Details:");
-        System.out.println("Customer Name: " + order1.customerName);
-        System.out.println("Product: " + order1.product.productName);
-        System.out.println("Order Amount: " + order1.orderAmount);
-        System.out.println();
-
-        System.out.println("Order Details:");
-        System.out.println("Customer Name: " + order2.customerName);
-        System.out.println("Product: " + order2.product.productName);
-        System.out.println("Order Amount: " + order2.orderAmount);
+    public static int countDigitOne(int N) {
+        // write your code here:
+        return 0;
     }
-}
-
-class Product {
-    public String productName;
-    public double price;
-    public int quantityInStock;
-
-    public Product(String productName, double price, int quantityInStock) {
-        this.productName = productName;
-        this.price = price;
-        this.quantityInStock = quantityInStock;
+    //Non editable starts here
+    public static void main (String[]args){
+        Scanner sc = new Scanner(System.in);
+        int N = sc.nextInt();
+        sc.close();
+        try {
+            System.out.print(countDigitOne(N));
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
     }
-}
-
-class Order {
-    public String customerName;
-    public Product product;
-    public double orderAmount;
-
-    public Order(String customerName, Product product) {
-        this.customerName = customerName;
-        this.product = product;
-        this.orderAmount = 100.0;
-    }
-
-    public Order(String customerName, Product product, double orderAmount) {
-        this.customerName = customerName;
-        this.product = product;
-        this.orderAmount = orderAmount;
-    }
-}
+    //Non editable ends here
