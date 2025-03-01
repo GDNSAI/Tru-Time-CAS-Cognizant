@@ -1,36 +1,30 @@
-import java.util.*;
-import java.io.*;
-import java.lang.Math;
-// write your code here
+import java.util.Scanner;
+
 public class Main {
     public static int countDigitOne(int N) {
-        // write your code here:
         if (N < 0 || N > 100) {
-            throw new IllegalArgumentException("The Number Is Not Valid");
+            throw new IllegalArgumentException("The Number is Not Valid");
         }
         int count = 0;
-        for (int i = 1; i <= N; i++) {
-            int num = i;
-            while (num > 0) {
-                if (num % 10 == 1) {
+        for (int i = 0; i <= N; i++) {
+            String numStr = Integer.toString(i);
+            for (int j = 0; j < numStr.length(); j++) {
+                if (numStr.charAt(j) == '1') {
                     count++;
                 }
-                num /= 10;
             }
         }
         return count;
     }
-    //Non editable starts here
-    public static void main (String[]args){
+
+    public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         int N = sc.nextInt();
         sc.close();
         try {
-            System.out.print(countDigitOne(N));
-            } catch (Exception ex) {
-                System.out.println(ex.getMessage());
-            }
+            System.out.println(countDigitOne(N));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
-    //Non editable ends here
 }
