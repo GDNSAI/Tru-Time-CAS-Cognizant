@@ -1,64 +1,119 @@
-function validateForm() {
-    let isValid = true;
-    // ... existing validation code ...
+Product Inventory System
 
-    // New Date Validation
-    const allocationStart = new Date(document.getElementById('allocationStartDate').value);
-    const allocationEnd = new Date(document.getElementById('allocationEndDate').value);
-    if (allocationStart > allocationEnd) {
-        alert('Allocation Start Date must be before or equal to Allocation End Date');
-        isValid = false;
-    }
+1. Skill Description:
+The assignment is designed to assess and develop your understanding of Core Java
+concepts, Object-Oriented Programming (OOP) principles, and the use of
+constructors. You will apply these skills to create a product inventory system that
+models products, orders, and customers.
+2. Prerequisite:
+Basic knowledge of Java syntax, data types, variables, and the concept of OOP
+(classes and objects). Understanding how to use constructors in Java is also required.
+3. Scenario:
+You are developing a simple product inventory and order management system for a
+small online store. The store sells various products, each with a name, price, and
+quantity in stock. Customers can place orders for products. You will model the
+system using classes, variables, constructors, and objects. Your task is to:
+1. Define classes for products and orders.
+2. Use constructors to initialize objects.
+3. Display product and order details.
+4. Task:
+You will complete the following:
+o Create a class Product to represent a product with the following attributes:
+ productName (String)
+ price (double)
+ quantityInStock (int)
 
-    const billingStart = new Date(document.getElementById('billingStartDate').value);
-    const billingEnd = new Date(document.getElementById('billingEndDate').value);
-    if (billingStart > billingEnd) {
-        alert('Billing Start Date must be before or equal to Billing End Date');
-        isValid = false;
-    }
+o Create a class Order to represent an order with the following attributes:
+ customerName (String)
+ product (Product type)
+ orderAmount (double)
+o Use constructors in both classes to initialize the attributes:
+ The Product class should have a constructor that takes productName,
+price, and quantityInStock.
+ The Order class should have two constructors:
+ One that takes customerName and product (using a default
+orderAmount of 100.0).
+ Another that takes all three parameters: customerName,
+product, and orderAmount.
 
-    return isValid;
-}
+o In the main method, create two Product objects and two Order objects.
+o Display the details of the products and orders.
+5. Instructions:
+o Step 1: Create a class named Product with the following attributes:
+ productName (String)
+ price (double)
+ quantityInStock (int)
+o Step 2: Create a constructor in the Product class that initializes the attributes
+using the provided parameters.
+o Step 3: Create a class named Order with the following attributes:
+ customerName (String)
+ product (Product type)
+ orderAmount (double)
+o Step 4: Create two constructors in the Order class:
+ The first constructor should take customerName and product, setting
+the orderAmount to a default value of 100.0.
 
+ The second constructor should take all three parameters:
+customerName, product, and orderAmount.
+o Step 5: In the main method, create two Product objects:
+ Product 1: &quot;Wireless Mouse&quot;, 29.99, 150
+ Product 2: &quot;Smartphone&quot;, 499.99, 80
+o Step 6: Create two Order objects:
+ Order 1: Customer: &quot;Alice&quot;, Product: Wireless Mouse (use the default
+orderAmount)
+ Order 2: Customer: &quot;Bob&quot;, Product: Smartphone, Order Amount:
+499.99
 
-// In your POST route
-const allocationStart = new Date(allocationStartDate);
-const allocationEnd = new Date(allocationEndDate);
-if (allocationStart > allocationEnd) {
-    return res.status(400).json({ error: 'Allocation Start Date must be before or equal to Allocation End Date' });
-}
+o Step 7: Display the details of both the products and the orders using
+System.out.println().
 
-const billingStart = new Date(billingStartDate);
-const billingEnd = new Date(billingEndDate);
-if (billingStart > billingEnd) {
-    return res.status(400).json({ error: 'Billing Start Date must be before or equal to Billing End Date' });
-}
+6. Input:
+No input from the user; use hardcoded values for creating products and orders.
+7. Sample Dataset:
+Product 1:
+Product Name: Wireless Mouse
+Price: 29.99
+Quantity in Stock: 150
+Product 2:
+Product Name: Smartphone
+Price: 499.99
+Quantity in Stock: 80
+Order 1:
+Customer Name: Alice
+Product: Wireless Mouse
+Order Amount: 100.0 (default)
+Order 2:
 
+Customer Name: Bob
+Product: Smartphone
+Order Amount: 499.99
+8. Expected Outcome:
+The program should output the following:
+Product Details:
+Product Name: Wireless Mouse
+Price: 29.99
+Quantity in Stock: 150
 
-document.getElementById("submitBtn").addEventListener("click", async () => {
-    if (!validateForm()) return;  // Client-side validation first
-    
-    const data = collectFormData();
-    try {
-        const response = await fetch('/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
+Product Details:
+Product Name: Smartphone
+Price: 499.99
+Quantity in Stock: 80
 
-        const result = await response.json();
-        if (!response.ok) {
-            // Show server validation errors
-            alert(result.error || "Failed to save data");
-            return;
-        }
-        
-        alert(data.status === 'Historic' 
-            ? "Historic record added to top!" 
-            : "New record added successfully!");
-        clearForm();
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Failed to save data");
-    }
-});
+Order Details:
+Customer Name: Alice
+Product: Wireless Mouse
+Order Amount: 100.0
+
+Order Details:
+Customer Name: Bob
+Product: Smartphone
+Order Amount: 499.99
+9. Learning Outcome:
+By completing this assignment, learners will:
+o Gain hands-on experience with Java variables and data types.
+
+o Learn how to define and use classes and objects.
+o Understand how constructors are used to initialize objects with specific
+values.
+o Develop the ability to model real-world entities (products and orders) using
+Java&#39;s OOP principles.
