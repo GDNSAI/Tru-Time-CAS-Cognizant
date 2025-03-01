@@ -5,7 +5,20 @@ import java.lang.Math;
 public class Main {
     public static int countDigitOne(int N) {
         // write your code here:
-        return 0;
+        if (N < 0 || N > 100) {
+            throw new IllegalArgumentException("The Number Is Not Valid");
+        }
+        int count = 0;
+        for (int i = 1; i <= N; i++) {
+            int num = i;
+            while (num > 0) {
+                if (num % 10 == 1) {
+                    count++;
+                }
+                num /= 10;
+            }
+        }
+        return count;
     }
     //Non editable starts here
     public static void main (String[]args){
@@ -20,3 +33,4 @@ public class Main {
         }
     }
     //Non editable ends here
+}
